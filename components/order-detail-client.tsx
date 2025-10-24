@@ -56,15 +56,17 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
             <div className="space-y-6 lg:col-span-2">
               {/* Progreso del envío */}
               <Card>
-                <CardContent className="pt-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Ship className="h-5 w-5" />
+                    Progreso del envío
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
                   <div className="flex items-start gap-4">
-                    <div className="rounded-lg bg-blue-100 p-3">
-                      <Ship className="h-6 w-6 text-blue-600" />
-                    </div>
                     <div className="flex-1 space-y-2">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm font-medium">Progreso del envío</p>
                           <p className="text-2xl font-semibold text-blue-600">{order.progreso}%</p>
                         </div>
                         <div className="flex gap-2">

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { X, User, Building2, Users, Bell, Plug, Shield, Camera, Edit, Lock, Plus } from "lucide-react"
+import { X, User, Building2, Users, Bell, Plug, Shield } from "lucide-react"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 
 type Section = "perfil" | "empresa" | "usuarios" | "notificaciones" | "integraciones" | "seguridad"
@@ -18,33 +19,6 @@ interface ConfiguracionesModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
 }
-
-const mockUsers = [
-  {
-    id: "1",
-    name: "Juan Carlos Maldonado",
-    email: "juan.maldonado@wuilio.com",
-    role: "Administrador",
-    status: "Activo",
-    lastAccess: "2025-05-01",
-  },
-  {
-    id: "2",
-    name: "Bruno Fatur Gonzales",
-    email: "bruno.fatur@wuilio.com",
-    role: "Miembro",
-    status: "Activo",
-    lastAccess: "2025-05-01",
-  },
-  {
-    id: "3",
-    name: "María López",
-    email: "maria.lopez@wuilio.com",
-    role: "Miembro",
-    status: "Inactivo",
-    lastAccess: "2025-04-28",
-  },
-]
 
 export function ConfiguracionesModal({ open, onOpenChange }: ConfiguracionesModalProps) {
   const [activeSection, setActiveSection] = useState<Section>("perfil")
@@ -63,26 +37,21 @@ export function ConfiguracionesModal({ open, onOpenChange }: ConfiguracionesModa
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent
-  className="!max-w-none
-    w-[95vw] sm:w-[85vw] md:w-[75vw] lg:w-[65vw]
-    h-[90vh]
-    p-0 overflow-hidden
-    rounded-2xl border border-slate-200 shadow-xl
-    bg-white
-  "
->
+        <DialogContent className="!max-w-3xl w-full h-[520px] p-0 overflow-hidden rounded-2xl border border-border bg-background/95 shadow-2xl backdrop-blur-md">
           <div className="flex h-full">
-            {/* Sidebar */}
-            <div className="w-[180px] border-r bg-white p-3 flex flex-col shrink-0">
-              <div className="flex items-center justify-between mb-6 px-2">
-                
-                <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="h-6 w-6 -mr-2">
-                  
-                </Button>
-              </div>
+            {/* Botón de cierre */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute left-4 top-4 z-10 h-8 w-8 rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+              onClick={() => onOpenChange(false)}
+            >
+              <X className="h-5 w-5" />
+            </Button>
 
-              <nav className="space-y-0.5 flex-1">
+            {/* Sidebar */}
+            <div className="w-56 border-r bg-muted/30 p-4 pt-16">
+              <nav className="space-y-1">
                 {sections.map((section) => {
                   const Icon = section.icon
                   return (
@@ -90,13 +59,13 @@ export function ConfiguracionesModal({ open, onOpenChange }: ConfiguracionesModa
                       key={section.id}
                       onClick={() => setActiveSection(section.id)}
                       className={cn(
-                        "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors",
+                        "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                         activeSection === section.id
-                          ? "bg-slate-100 text-slate-900 font-medium"
-                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
+                          ? "bg-accent text-foreground shadow-sm"
+                          : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
                       )}
                     >
-                      <Icon className="h-4 w-4 shrink-0" />
+                      <Icon className="h-4 w-4" />
                       {section.label}
                     </button>
                   )
@@ -104,11 +73,9 @@ export function ConfiguracionesModal({ open, onOpenChange }: ConfiguracionesModa
               </nav>
             </div>
 
-            {/* Content */}
-            <div className="flex-1 overflow-y-auto bg-white">
-              {activeSection === "perfil" && (
-                <PerfilSection onChangePassword={() => setShowChangePasswordModal(true)} />
-              )}
+            {/* Contenido principal */}
+            <div className="flex-1 overflow-y-auto px-6 py-5">
+              {activeSection === "perfil" && <PerfilSection />}
               {activeSection === "empresa" && <EmpresaSection />}
               {activeSection === "usuarios" && <UsuariosSection onAddUser={() => setShowAddUserModal(true)} />}
               {activeSection === "notificaciones" && <NotificacionesSection />}
@@ -119,88 +86,254 @@ export function ConfiguracionesModal({ open, onOpenChange }: ConfiguracionesModa
         </DialogContent>
       </Dialog>
 
-      {/* Add User Modal */}
       <AddUserModal open={showAddUserModal} onOpenChange={setShowAddUserModal} />
-
-      {/* Change Password Modal */}
       <ChangePasswordModal open={showChangePasswordModal} onOpenChange={setShowChangePasswordModal} />
     </>
   )
 }
 
-function PerfilSection({ onChangePassword }: { onChangePassword: () => void }) {
+/* === estilos base === */
+const inputClass =
+  "h-9 w-full rounded-md bg-muted/40 border border-border text-sm text-foreground focus:ring-2 focus:ring-primary/40 focus:outline-none px-3 placeholder:text-muted-foreground"
+const sectionTitle = "text-xl font-semibold tracking-tight mb-6"
+
+/* === Sección: Perfil === */
+function PerfilSection() {
+  const [nombre, setNombre] = useState("Juan Carlos Maldonado")
+  const [documento, setDocumento] = useState("72326043")
+  const [correo, setCorreo] = useState("juan.maldonado@wuilio.com")
+  const [contacto, setContacto] = useState("+51 912132679")
+
   return (
-    <div className="px-20 py-12 max-w-6xl pr-7 pb-0 pt-12 space-y-12 pl-7">
-      <div className="flex items-start gap-8">
-        <div className="relative shrink-0">
-          <div className="h-20 w-20 rounded-full bg-blue-600 flex items-center justify-center text-white text-xl font-semibold">
-            JM
-          </div>
-          <Button
-            size="icon"
-            variant="secondary"
-            className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full shadow-sm border-2 border-white bg-white hover:bg-slate-50"
-          >
-            <Camera className="h-3.5 w-3.5" />
-          </Button>
-        </div>
-        <div className="flex-1 pt-1">
-          <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100 mb-2 font-medium">Administrador</Badge>
-          <p className="text-sm text-slate-500">JPG, PNG o GIF. Máximo 2MB.</p>
+    <div className="py-0 pb-0 space-y-6 my-0 mb-0 mt-0">
+      <h2 className={sectionTitle}>Información Personal</h2>
+
+      <div className="flex items-center gap-4">
+        <Avatar className="h-16 w-16 ring-2 ring-border">
+          <AvatarFallback>JM</AvatarFallback>
+        </Avatar>
+        <div>
+          <Badge variant="secondary" className="bg-yellow-500/10 text-yellow-600 hover:bg-yellow-500/20">
+            Administrador
+          </Badge>
+          <p className="mt-1 text-xs text-muted-foreground">JPG, PNG o GIF. Máximo 2MB.</p>
         </div>
       </div>
 
-      <div className="space-y-8">
-        <div className="flex items-center justify-between pb-4 border-b">
-          <h3 className="text-2xl font-semibold text-slate-900">Información Personal</h3>
-          <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 font-medium">
-            <Edit className="h-4 w-4 mr-2" />
-            Editar
+      <div className="space-y-4 text-sm">
+        <div className="space-y-2">
+          <Label>Nombre Completo</Label>
+          <Input value={nombre} onChange={(e) => setNombre(e.target.value)} className={inputClass} />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Documento</Label>
+          <Input value={documento} onChange={(e) => setDocumento(e.target.value)} className={inputClass} />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Nacionalidad</Label>
+          <Select defaultValue="peru">
+            <SelectTrigger className={inputClass}>
+              <SelectValue placeholder="Selecciona" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="peru">Peruana</SelectItem>
+              <SelectItem value="chile">Chilena</SelectItem>
+              <SelectItem value="colombia">Colombiana</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Correo</Label>
+          <Input type="email" value={correo} onChange={(e) => setCorreo(e.target.value)} className={inputClass} />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Contacto</Label>
+          <Input value={contacto} onChange={(e) => setContacto(e.target.value)} className={inputClass} />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Cargo</Label>
+          <Select defaultValue="gerente">
+            <SelectTrigger className={inputClass}>
+              <SelectValue placeholder="Selecciona" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="gerente">Gerente de Exportación</SelectItem>
+              <SelectItem value="supervisor">Supervisor</SelectItem>
+              <SelectItem value="operador">Operador</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* === Sección: Empresa === */
+function EmpresaSection() {
+  const [razonSocial, setRazonSocial] = useState("WUILIO PERU S.A.C.")
+  const [ruc, setRuc] = useState("20123456789")
+  const [direccion, setDireccion] = useState("Av. Principal 123, Lima")
+  const [telefono, setTelefono] = useState("+51 1 234 5678")
+
+  return (
+    <div className="space-y-6">
+      <h2 className={sectionTitle}>Información de Empresa</h2>
+
+      <div className="space-y-4 text-sm">
+        <div className="space-y-2">
+          <Label>Razón Social</Label>
+          <Input value={razonSocial} onChange={(e) => setRazonSocial(e.target.value)} className={inputClass} />
+        </div>
+
+        <div className="space-y-2">
+          <Label>RUC</Label>
+          <Input value={ruc} onChange={(e) => setRuc(e.target.value)} className={inputClass} />
+        </div>
+
+        <div className="space-y-2">
+          <Label>País</Label>
+          <Select defaultValue="peru">
+            <SelectTrigger className={inputClass}>
+              <SelectValue placeholder="Selecciona" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="peru">Perú</SelectItem>
+              <SelectItem value="chile">Chile</SelectItem>
+              <SelectItem value="colombia">Colombia</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Dirección</Label>
+          <Input value={direccion} onChange={(e) => setDireccion(e.target.value)} className={inputClass} />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Teléfono</Label>
+          <Input value={telefono} onChange={(e) => setTelefono(e.target.value)} className={inputClass} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* === Usuarios === */
+function UsuariosSection({ onAddUser }: { onAddUser: () => void }) {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className={sectionTitle}>Gestión de Usuarios</h2>
+        <Button onClick={onAddUser} size="sm" className="bg-blue-600 hover:bg-blue-700">
+          Agregar Usuario
+        </Button>
+      </div>
+      <p className="text-sm text-muted-foreground">Administra los usuarios que tienen acceso al sistema.</p>
+    </div>
+  )
+}
+
+/* === Notificaciones === */
+function NotificacionesSection() {
+  return (
+    <div className="space-y-6">
+      <h2 className={sectionTitle}>Notificaciones</h2>
+
+      <div className="space-y-4 text-sm">
+        <div className="space-y-2">
+          <Label>Notificaciones por correo</Label>
+          <Select defaultValue="all">
+            <SelectTrigger className={inputClass}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas</SelectItem>
+              <SelectItem value="important">Importantes</SelectItem>
+              <SelectItem value="none">Ninguna</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Notificaciones push</Label>
+          <Switch defaultChecked />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* === Integraciones === */
+function IntegracionesSection() {
+  return (
+    <div className="space-y-6">
+      <h2 className={sectionTitle}>Integraciones</h2>
+      <p className="text-sm text-muted-foreground">Conecta servicios externos y APIs.</p>
+    </div>
+  )
+}
+
+/* === Seguridad === */
+function SeguridadSection() {
+  const [currentPassword, setCurrentPassword] = useState("")
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+
+  return (
+    <div className="space-y-6">
+      <h2 className={sectionTitle}>Seguridad</h2>
+
+      <div className="space-y-4 text-sm">
+        <div className="space-y-2">
+          <Label>Contraseña Actual</Label>
+          <Input
+            type="password"
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+            className={inputClass}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Nueva Contraseña</Label>
+          <Input
+            type="password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            className={inputClass}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Confirmar Contraseña</Label>
+          <Input
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            className={inputClass}
+          />
+        </div>
+
+        <div className="flex justify-end pt-2">
+          <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+            Actualizar Contraseña
           </Button>
         </div>
 
-        <div className="grid grid-cols-2 gap-x-20 gap-y-8 pt-2">
-          <div>
-            <Label className="text-sm font-medium text-slate-500 mb-2 block">Nombre Completo</Label>
-            <p className="text-base text-slate-900">Juan Carlos Maldonado</p>
-          </div>
-          <div>
-            <Label className="text-sm font-medium text-slate-500 mb-2 block">Documento</Label>
-            <p className="text-base text-slate-900">72326043</p>
-          </div>
-          <div>
-            <Label className="text-sm font-medium text-slate-500 mb-2 block">Nacionalidad</Label>
-            <p className="text-base text-slate-900">Peruana</p>
-          </div>
-          <div>
-            <Label className="text-sm font-medium text-slate-500 mb-2 block">Correo</Label>
-            <p className="text-base text-slate-900">juan.maldonado@wuilio.com</p>
-          </div>
-          <div>
-            <Label className="text-sm font-medium text-slate-500 mb-2 block">Contacto</Label>
-            <p className="text-base text-slate-900">+51 912132679</p>
-          </div>
-          <div>
-            <Label className="text-sm font-medium text-slate-500 mb-2 block">Cargo</Label>
-            <p className="text-base text-slate-900">Gerente de Exportación</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="space-y-8">
-        <div className="flex items-center justify-between pb-4 border-b">
-          <h3 className="text-2xl font-semibold text-slate-900">Contraseña</h3>
-        </div>
+        <Separator />
 
         <div className="flex items-center justify-between pt-2">
           <div>
-            <Label className="text-sm font-medium text-slate-500 mb-2 block">Contraseña</Label>
-            <p className="text-base text-slate-900 mb-2">••••••••••••</p>
-            <p className="text-sm text-slate-500">Última actualización: hace 1 mes</p>
+            <p className="font-medium">Autenticación de dos factores</p>
+            <p className="text-xs text-muted-foreground">Agrega una capa extra de seguridad</p>
           </div>
-          <Button variant="outline" onClick={onChangePassword} className="shrink-0 bg-transparent">
-            <Lock className="h-4 w-4 mr-2" />
-            Cambiar Contraseña
+          <Button variant="outline" size="sm">
+            Configurar
           </Button>
         </div>
       </div>
@@ -208,305 +341,27 @@ function PerfilSection({ onChangePassword }: { onChangePassword: () => void }) {
   )
 }
 
-function EmpresaSection() {
-  return (
-    <div className="px-20 py-12 space-y-12 max-w-6xl">
-      <div className="flex items-center gap-8">
-        <div className="h-28 w-28 rounded-xl bg-slate-50 flex items-center justify-center border-2 border-dashed border-slate-200">
-          <Building2 className="h-12 w-12 text-slate-400" />
-        </div>
-        <div className="flex-1">
-          <Button variant="outline" size="sm" className="mb-2 bg-transparent">
-            <Camera className="h-4 w-4 mr-2" />
-            Cargar Logo
-          </Button>
-          <p className="text-sm text-slate-500">JPG, PNG o GIF. Máximo 2MB.</p>
-        </div>
-        <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 font-medium">Exportable / Importador</Badge>
-      </div>
-
-      <div className="space-y-8">
-        <div className="flex items-center justify-between pb-4 border-b">
-          <h3 className="text-2xl font-semibold text-slate-900">Información Empresa</h3>
-          <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 font-medium">
-            <Edit className="h-4 w-4 mr-2" />
-            Editar
-          </Button>
-        </div>
-
-        <div className="grid grid-cols-2 gap-x-20 gap-y-8 pt-2">
-          <div>
-            <Label className="text-sm font-medium text-slate-500 mb-2 block">Empresa</Label>
-            <p className="text-base text-slate-900">Wuilio Peru SAC</p>
-          </div>
-          <div>
-            <Label className="text-sm font-medium text-slate-500 mb-2 block">RUC</Label>
-            <p className="text-base text-slate-900">2039203920</p>
-          </div>
-          <div>
-            <Label className="text-sm font-medium text-slate-500 mb-2 block">País</Label>
-            <p className="text-base text-slate-900">Peru</p>
-          </div>
-          <div>
-            <Label className="text-sm font-medium text-slate-500 mb-2 block">Dirección</Label>
-            <p className="text-base text-slate-900">Calle Industrial 0029, Lince</p>
-          </div>
-          <div className="col-span-2">
-            <Label className="text-sm font-medium text-slate-500 mb-2 block">Documentos</Label>
-            <Button variant="link" size="sm" className="h-auto p-0 text-blue-600 hover:text-blue-700 font-medium">
-              Certificado RUC.pdf
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      <div className="space-y-8">
-        <div className="flex items-center justify-between pb-4 border-b">
-          <h3 className="text-2xl font-semibold text-slate-900">Representante Legal</h3>
-          <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 font-medium">
-            <Edit className="h-4 w-4 mr-2" />
-            Editar
-          </Button>
-        </div>
-
-        <div className="grid grid-cols-2 gap-x-20 gap-y-8 pt-2">
-          <div>
-            <Label className="text-sm font-medium text-slate-500 mb-2 block">Nombre</Label>
-            <p className="text-base text-slate-900">Elizabeth Allen</p>
-          </div>
-          <div>
-            <Label className="text-sm font-medium text-slate-500 mb-2 block">Documento</Label>
-            <p className="text-base text-slate-900">788937839</p>
-          </div>
-          <div>
-            <Label className="text-sm font-medium text-slate-500 mb-2 block">Celular</Label>
-            <p className="text-base text-slate-900">+51 912132679</p>
-          </div>
-          <div>
-            <Label className="text-sm font-medium text-slate-500 mb-2 block">Correo</Label>
-            <p className="text-base text-slate-900">elizabeth@company.com</p>
-          </div>
-          <div className="col-span-2">
-            <Label className="text-sm font-medium text-slate-500 mb-2 block">Documentos</Label>
-            <div className="flex gap-6">
-              <Button variant="link" size="sm" className="h-auto p-0 text-blue-600 hover:text-blue-700 font-medium">
-                Vigencia de Poder.pdf
-              </Button>
-              <Button variant="link" size="sm" className="h-auto p-0 text-blue-600 hover:text-blue-700 font-medium">
-                DNI.pdf
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function UsuariosSection({ onAddUser }: { onAddUser: () => void }) {
-  return (
-    <div className="px-20 py-12 space-y-8 max-w-6xl">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-2xl font-semibold text-slate-900">Gestión de Usuarios</h3>
-          <p className="text-sm text-slate-500 mt-1">Administra los usuarios y sus permisos</p>
-        </div>
-        <Button onClick={onAddUser} className="bg-blue-600 hover:bg-blue-700">
-          <Plus className="h-4 w-4 mr-2" />
-          Nuevo Usuario
-        </Button>
-      </div>
-
-      <div className="border rounded-xl overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-slate-50 border-b">
-            <tr>
-              <th className="text-left text-xs font-semibold text-slate-600 px-6 py-4">Usuario</th>
-              <th className="text-left text-xs font-semibold text-slate-600 px-6 py-4">Email</th>
-              <th className="text-left text-xs font-semibold text-slate-600 px-6 py-4">Rol</th>
-              <th className="text-left text-xs font-semibold text-slate-600 px-6 py-4">Estado</th>
-              <th className="text-left text-xs font-semibold text-slate-600 px-6 py-4">Último acceso</th>
-              <th className="text-right text-xs font-semibold text-slate-600 px-6 py-4">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {mockUsers.map((user) => (
-              <tr key={user.id} className="border-b last:border-0 hover:bg-slate-50/50 transition-colors">
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-semibold">
-                      {user.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")
-                        .substring(0, 2)}
-                    </div>
-                    <span className="text-sm font-medium text-slate-900">{user.name}</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-sm text-slate-600">{user.email}</td>
-                <td className="px-6 py-4 text-sm text-slate-900">{user.role}</td>
-                <td className="px-6 py-4">
-                  <Badge
-                    variant={user.status === "Activo" ? "default" : "secondary"}
-                    className={
-                      user.status === "Activo"
-                        ? "bg-green-100 text-green-800 hover:bg-green-100"
-                        : "bg-red-100 text-red-800 hover:bg-red-100"
-                    }
-                  >
-                    {user.status}
-                  </Badge>
-                </td>
-                <td className="px-6 py-4 text-sm text-slate-600">{user.lastAccess}</td>
-                <td className="px-6 py-4 text-right">
-                  <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50">
-                    Ver Permisos
-                  </Button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  )
-}
-
-function NotificacionesSection() {
-  return (
-    <div className="px-20 py-12 space-y-8 max-w-5xl">
-      <div>
-        <h3 className="text-2xl font-semibold text-slate-900">Preferencias de Notificaciones</h3>
-        <p className="text-sm text-slate-500 mt-1">Configura cómo y cuándo recibir notificaciones</p>
-      </div>
-
-      <div className="space-y-4">
-        <div className="flex items-center justify-between py-5 border-b">
-          <div>
-            <p className="font-medium text-slate-900">Notificaciones por Email</p>
-            <p className="text-sm text-slate-500 mt-1">Recibe actualizaciones importantes por correo</p>
-          </div>
-          <Switch defaultChecked />
-        </div>
-
-        <div className="flex items-center justify-between py-5 border-b">
-          <div>
-            <p className="font-medium text-slate-900">Alertas de Órdenes</p>
-            <p className="text-sm text-slate-500 mt-1">Notificaciones sobre cambios en órdenes</p>
-          </div>
-          <Switch defaultChecked />
-        </div>
-
-        <div className="flex items-center justify-between py-5 border-b">
-          <div>
-            <p className="font-medium text-slate-900">Recordatorios de Programación</p>
-            <p className="text-sm text-slate-500 mt-1">Alertas sobre eventos programados</p>
-          </div>
-          <Switch />
-        </div>
-
-        <div className="flex items-center justify-between py-5">
-          <div>
-            <p className="font-medium text-slate-900">Actualizaciones de Facturas</p>
-            <p className="text-sm text-slate-500 mt-1">Notificaciones sobre facturas y pagos</p>
-          </div>
-          <Switch defaultChecked />
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function IntegracionesSection() {
-  return (
-    <div className="px-20 py-12 space-y-8 max-w-5xl">
-      <div>
-        <h3 className="text-2xl font-semibold text-slate-900">Integraciones</h3>
-        <p className="text-sm text-slate-500 mt-1">Conecta servicios externos y APIs</p>
-      </div>
-
-      <div className="space-y-4">
-        <div className="flex items-center justify-between py-5 border-b">
-          <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-xl bg-slate-100 flex items-center justify-center">
-              <Plug className="h-6 w-6 text-slate-600" />
-            </div>
-            <div>
-              <p className="font-medium text-slate-900">API de Wuilio</p>
-              <p className="text-sm text-slate-500 mt-0.5">Integración con servicios externos</p>
-            </div>
-          </div>
-          <Button variant="outline">Configurar</Button>
-        </div>
-
-        <div className="flex items-center justify-between py-5">
-          <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-xl bg-slate-100 flex items-center justify-center">
-              <Plug className="h-6 w-6 text-slate-600" />
-            </div>
-            <div>
-              <p className="font-medium text-slate-900">Webhooks</p>
-              <p className="text-sm text-slate-500 mt-0.5">Recibe eventos en tiempo real</p>
-            </div>
-          </div>
-          <Button variant="outline">Configurar</Button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function SeguridadSection() {
-  return (
-    <div className="px-20 py-12 space-y-8 max-w-5xl">
-      <div>
-        <h3 className="text-2xl font-semibold text-slate-900">Seguridad</h3>
-        <p className="text-sm text-slate-500 mt-1">Protege tu cuenta y datos</p>
-      </div>
-
-      <div className="space-y-4">
-        <div className="flex items-center justify-between py-5 border-b">
-          <div>
-            <p className="font-medium text-slate-900">Autenticación de Dos Factores</p>
-            <p className="text-sm text-slate-500 mt-1">Agrega una capa extra de seguridad</p>
-          </div>
-          <Button variant="outline">Activar</Button>
-        </div>
-
-        <div className="py-5">
-          <p className="font-medium text-slate-900 mb-4">Sesiones Activas</p>
-          <p className="text-sm text-slate-500 mb-6">Dispositivos con sesión iniciada</p>
-          <div className="flex items-center justify-between text-sm py-3 px-4 bg-slate-50 rounded-lg">
-            <span className="text-slate-900">Chrome en Windows - Lima, Peru</span>
-            <span className="text-slate-500">Ahora</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
+/* === Modales === */
 function AddUserModal({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <div className="space-y-6">
+      <DialogContent className="max-w-md rounded-xl">
+        <div className="space-y-6 text-sm">
           <div>
             <h3 className="text-lg font-semibold">Agregar Usuario</h3>
-            <p className="text-sm text-muted-foreground">Añade miembros a tu equipo</p>
+            <p className="text-muted-foreground">Añade miembros a tu equipo</p>
           </div>
 
           <div className="space-y-4">
-            <div>
+            <div className="space-y-2">
               <Label>Email</Label>
-              <Input placeholder="usuario@ejemplo.com" />
+              <Input placeholder="usuario@ejemplo.com" className={inputClass} />
             </div>
 
-            <div>
+            <div className="space-y-2">
               <Label>Rol</Label>
               <Select defaultValue="miembro">
-                <SelectTrigger>
+                <SelectTrigger className={inputClass}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -518,71 +373,12 @@ function AddUserModal({ open, onOpenChange }: { open: boolean; onOpenChange: (op
 
             <Separator />
 
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded bg-blue-100 flex items-center justify-center">
-                    <Building2 className="h-4 w-4 text-blue-600" />
-                  </div>
-                  <span className="font-medium">Operaciones</span>
-                </div>
-                <Switch defaultChecked />
-              </div>
-
-              <div className="ml-10 space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Control Tower</span>
-                  <Select defaultValue="editar">
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ver">Ver</SelectItem>
-                      <SelectItem value="editar">Editar</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Órdenes</span>
-                  <Select defaultValue="ver">
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ver">Ver</SelectItem>
-                      <SelectItem value="editar">Editar</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded bg-slate-100 flex items-center justify-center">
-                    <Building2 className="h-4 w-4 text-slate-600" />
-                  </div>
-                  <span className="font-medium">Finanzas</span>
-                </div>
-                <Switch />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded bg-slate-100 flex items-center justify-center">
-                    <Building2 className="h-4 w-4 text-slate-600" />
-                  </div>
-                  <span className="font-medium">Maestro</span>
-                </div>
-                <Switch />
-              </div>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                Cancelar
+              </Button>
+              <Button className="bg-blue-600 hover:bg-blue-700">Invitar</Button>
             </div>
-          </div>
-
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
-            </Button>
-            <Button className="bg-blue-600 hover:bg-blue-700">Invitar</Button>
           </div>
         </div>
       </DialogContent>
@@ -593,30 +389,14 @@ function AddUserModal({ open, onOpenChange }: { open: boolean; onOpenChange: (op
 function ChangePasswordModal({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <div className="space-y-6">
-          <div>
-            <h3 className="text-lg font-semibold">Cambiar Contraseña</h3>
-            <p className="text-sm text-muted-foreground">Actualiza tu contraseña de acceso</p>
+      <DialogContent className="max-w-md rounded-xl">
+        <div className="space-y-6 text-sm">
+          <h3 className="text-lg font-semibold">Cambiar Contraseña</h3>
+          <div className="space-y-3">
+            <Input type="password" placeholder="Contraseña actual" className={inputClass} />
+            <Input type="password" placeholder="Nueva contraseña" className={inputClass} />
+            <Input type="password" placeholder="Confirmar nueva contraseña" className={inputClass} />
           </div>
-
-          <div className="space-y-4">
-            <div>
-              <Label>Contraseña Actual</Label>
-              <Input type="password" />
-            </div>
-
-            <div>
-              <Label>Nueva Contraseña</Label>
-              <Input type="password" />
-            </div>
-
-            <div>
-              <Label>Confirmar Nueva Contraseña</Label>
-              <Input type="password" />
-            </div>
-          </div>
-
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar

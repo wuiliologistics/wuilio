@@ -22,10 +22,10 @@ interface ProductoFormModalProps {
 const unidadOptions = ["m²", "m³", "kg", "TM", "unidad", "caja", "litro"] as const
 const empaqueBaseOptions = ["Unidad", "Caja", "Pallet", "Big bag", "Saco", "Tambor", "Bin"] as const
 const empaqueSecundarioOptions = ["Si", "No"] as const
-const unidadEmpaqueSecundarioOptions = ["m²", "m³", "Paleta", "Big bag", "Caja", "Saco", "TM", "Unidad"] as const
+const unidadEmpaqueSecundarioOptions = ["Paleta"] as const
 
 export function ProductoFormModal({ open, onClose, onSave, producto }: ProductoFormModalProps) {
-  const [formData, setFormData] = useState<Partial<Producto>>({
+  const defaultFormData: Partial<Producto> = {
     codigo_producto: "",
     descripcion_comercial: "",
     partida_arancelaria: "",
@@ -39,33 +39,18 @@ export function ProductoFormModal({ open, onClose, onSave, producto }: ProductoF
     peso_bruto_kg: 0,
     dimensiones_cm: "",
     empaque_secundario: "Si",
-    unidad_empaque_secundario: "m²",
+    unidad_empaque_secundario: "Paleta",
     cantidad_maxima_empaque_secundario: 0,
     estado: "Activo",
-  })
+  }
+
+  const [formData, setFormData] = useState<Partial<Producto>>(defaultFormData)
 
   useEffect(() => {
     if (producto) {
-      setFormData(producto)
+      setFormData({ ...defaultFormData, ...producto })
     } else {
-      setFormData({
-        codigo_producto: "",
-        descripcion_comercial: "",
-        partida_arancelaria: "",
-        formato_presentacion: "",
-        unidades_comerciales_valor: 0,
-        unidad: "kg",
-        pais_origen: "",
-        precio_fob_usd: 0,
-        empaque_base: "Saco",
-        peso_neto_kg: 0,
-        peso_bruto_kg: 0,
-        dimensiones_cm: "",
-        empaque_secundario: "Si",
-        unidad_empaque_secundario: "m²",
-        cantidad_maxima_empaque_secundario: 0,
-        estado: "Activo",
-      })
+      setFormData(defaultFormData)
     }
   }, [producto, open])
 
@@ -189,8 +174,15 @@ export function ProductoFormModal({ open, onClose, onSave, producto }: ProductoF
                 <Input
                   type="number"
                   step="0.01"
-                  value={formData.unidades_comerciales_valor}
-                  onChange={(e) => handleChange("unidades_comerciales_valor", Number.parseFloat(e.target.value))}
+                  value={
+                    isNaN(formData.unidades_comerciales_valor as number) ? "" : formData.unidades_comerciales_valor
+                  }
+                  onChange={(e) =>
+                    handleChange(
+                      "unidades_comerciales_valor",
+                      e.target.value === "" ? 0 : Number.parseFloat(e.target.value),
+                    )
+                  }
                   required
                 />
                 <Select value={formData.unidad} onValueChange={(value) => handleChange("unidad", value)}>
@@ -246,8 +238,10 @@ export function ProductoFormModal({ open, onClose, onSave, producto }: ProductoF
                 id="precio_fob_usd"
                 type="number"
                 step="0.01"
-                value={formData.precio_fob_usd}
-                onChange={(e) => handleChange("precio_fob_usd", Number.parseFloat(e.target.value))}
+                value={isNaN(formData.precio_fob_usd as number) ? "" : formData.precio_fob_usd}
+                onChange={(e) =>
+                  handleChange("precio_fob_usd", e.target.value === "" ? 0 : Number.parseFloat(e.target.value))
+                }
                 required
               />
             </div>
@@ -287,8 +281,10 @@ export function ProductoFormModal({ open, onClose, onSave, producto }: ProductoF
                   id="peso_neto_kg"
                   type="number"
                   step="0.01"
-                  value={formData.peso_neto_kg}
-                  onChange={(e) => handleChange("peso_neto_kg", Number.parseFloat(e.target.value))}
+                  value={isNaN(formData.peso_neto_kg as number) ? "" : formData.peso_neto_kg}
+                  onChange={(e) =>
+                    handleChange("peso_neto_kg", e.target.value === "" ? 0 : Number.parseFloat(e.target.value))
+                  }
                   required
                 />
               </div>
@@ -308,8 +304,10 @@ export function ProductoFormModal({ open, onClose, onSave, producto }: ProductoF
                   id="peso_bruto_kg"
                   type="number"
                   step="0.01"
-                  value={formData.peso_bruto_kg}
-                  onChange={(e) => handleChange("peso_bruto_kg", Number.parseFloat(e.target.value))}
+                  value={isNaN(formData.peso_bruto_kg as number) ? "" : formData.peso_bruto_kg}
+                  onChange={(e) =>
+                    handleChange("peso_bruto_kg", e.target.value === "" ? 0 : Number.parseFloat(e.target.value))
+                  }
                   required
                 />
               </div>
@@ -364,7 +362,7 @@ export function ProductoFormModal({ open, onClose, onSave, producto }: ProductoF
 
             {/* 11. Empaque Secundario */}
             <div className="space-y-2">
-              <Label>Empaque Secundario</Label>
+              <Label>Empaque Final</Label>
               <div className="grid grid-cols-2 gap-2">
                 <Select
                   value={formData.empaque_secundario}
@@ -384,6 +382,7 @@ export function ProductoFormModal({ open, onClose, onSave, producto }: ProductoF
                 <Select
                   value={formData.unidad_empaque_secundario}
                   onValueChange={(value) => handleChange("unidad_empaque_secundario", value)}
+                  disabled={formData.empaque_secundario !== "Si"}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -417,8 +416,18 @@ export function ProductoFormModal({ open, onClose, onSave, producto }: ProductoF
               <Input
                 id="cantidad_maxima_empaque_secundario"
                 type="number"
-                value={formData.cantidad_maxima_empaque_secundario}
-                onChange={(e) => handleChange("cantidad_maxima_empaque_secundario", Number.parseInt(e.target.value))}
+                value={
+                  isNaN(formData.cantidad_maxima_empaque_secundario as number)
+                    ? ""
+                    : formData.cantidad_maxima_empaque_secundario
+                }
+                onChange={(e) =>
+                  handleChange(
+                    "cantidad_maxima_empaque_secundario",
+                    e.target.value === "" ? 0 : Number.parseInt(e.target.value),
+                  )
+                }
+                disabled={formData.empaque_secundario !== "Si"}
                 required
               />
             </div>
