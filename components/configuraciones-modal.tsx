@@ -130,7 +130,7 @@ export function ConfiguracionesModal({ open, onOpenChange }: ConfiguracionesModa
 
 function PerfilSection({ onChangePassword }: { onChangePassword: () => void }) {
   return (
-    <div className="px-20 py-12 space-y-12 max-w-6xl pr-20">
+    <div className="px-20 py-12 max-w-6xl pr-7 pb-0 pt-12 space-y-12 pl-7">
       <div className="flex items-start gap-8">
         <div className="relative shrink-0">
           <div className="h-20 w-20 rounded-full bg-blue-600 flex items-center justify-center text-white text-xl font-semibold">
