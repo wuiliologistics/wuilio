@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Search, Settings, MoreHorizontal, ChevronLeft, ChevronRight, Users } from "lucide-react"
+import { Search, MoreHorizontal, ChevronLeft, ChevronRight, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -67,8 +67,6 @@ export function ClientesTable({
             <SelectItem value="Inactivo">Inactivo</SelectItem>
           </SelectContent>
         </Select>
-
-        
       </div>
 
       {/* Table */}
@@ -166,7 +164,7 @@ export function ClientesTable({
               variant={currentPage === pageNum ? "default" : "ghost"}
               size="icon"
               onClick={() => setCurrentPage(pageNum)}
-              className={cn(currentPage === pageNum && "bg-blue-600 hover:bg-blue-700")}
+              className={cn(currentPage === pageNum && "bg-black hover:bg-gray-800")}
             >
               {pageNum}
             </Button>

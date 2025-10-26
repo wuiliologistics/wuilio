@@ -157,16 +157,16 @@ export function ProductoFormModal({ open, onClose, onSave, producto }: ProductoF
               />
             </div>
 
-            {/* 5. Unidades Comerciales */}
+            {/* 5. Unidades Físicas */}
             <div className="space-y-2">
               <div className="flex items-center gap-1.5">
-                <Label>Unidades Comerciales</Label>
+                <Label>Unidades Físicas</Label>
                 <Tooltip>
                   <TooltipTrigger type="button">
                     <Info className="h-4 w-4 text-muted-foreground" />
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Ejemplo: 1.44</p>
+                    <p>Ejemplo: 1.66 m²</p>
                   </TooltipContent>
                 </Tooltip>
               </div>

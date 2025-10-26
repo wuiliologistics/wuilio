@@ -186,7 +186,6 @@ export function OrdersTable({
               variant={currentPage === pageNum ? "default" : "ghost"}
               size="icon"
               onClick={() => setCurrentPage(pageNum)}
-              className={cn(currentPage === pageNum && "bg-blue-600 hover:bg-blue-700")}
             >
               {pageNum}
             </Button>

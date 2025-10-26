@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { X, User, Building2, Users, Bell, Plug, Shield } from "lucide-react"
+import { X, User, Building2, Users, Bell, Plug, Shield, Upload } from "lucide-react"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"
 
 type Section = "perfil" | "empresa" | "usuarios" | "notificaciones" | "integraciones" | "seguridad"
@@ -74,7 +75,7 @@ export function ConfiguracionesModal({ open, onOpenChange }: ConfiguracionesModa
             </div>
 
             {/* Contenido principal */}
-            <div className="flex-1 overflow-y-auto px-6 py-5">
+            <div className="flex-1 overflow-y-auto px-6 py-5 max-h-[520px]">
               {activeSection === "perfil" && <PerfilSection />}
               {activeSection === "empresa" && <EmpresaSection />}
               {activeSection === "usuarios" && <UsuariosSection onAddUser={() => setShowAddUserModal(true)} />}
@@ -101,8 +102,11 @@ const sectionTitle = "text-xl font-semibold tracking-tight mb-6"
 function PerfilSection() {
   const [nombre, setNombre] = useState("Juan Carlos Maldonado")
   const [documento, setDocumento] = useState("72326043")
+  const [paisNacimiento, setPaisNacimiento] = useState("peru")
+  const [codigoPais, setCodigoPais] = useState("+51")
+  const [celular, setCelular] = useState("912132679")
+  const [cargoEmpresa, setCargoEmpresa] = useState("gerente")
   const [correo, setCorreo] = useState("juan.maldonado@wuilio.com")
-  const [contacto, setContacto] = useState("+51 912132679")
 
   return (
     <div className="py-0 pb-0 space-y-6 my-0 mb-0 mt-0">
@@ -122,7 +126,7 @@ function PerfilSection() {
 
       <div className="space-y-4 text-sm">
         <div className="space-y-2">
-          <Label>Nombre Completo</Label>
+          <Label>Nombres y Apellidos</Label>
           <Input value={nombre} onChange={(e) => setNombre(e.target.value)} className={inputClass} />
         </div>
 
@@ -132,41 +136,54 @@ function PerfilSection() {
         </div>
 
         <div className="space-y-2">
-          <Label>Nacionalidad</Label>
-          <Select defaultValue="peru">
+          <Label>País de Nacimiento</Label>
+          <Select value={paisNacimiento} onValueChange={setPaisNacimiento}>
             <SelectTrigger className={inputClass}>
-              <SelectValue placeholder="Selecciona" />
+              <SelectValue placeholder="Seleccionar" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="peru">Peruana</SelectItem>
-              <SelectItem value="chile">Chilena</SelectItem>
-              <SelectItem value="colombia">Colombiana</SelectItem>
+              <SelectItem value="peru">Perú</SelectItem>
+              <SelectItem value="chile">Chile</SelectItem>
+              <SelectItem value="colombia">Colombia</SelectItem>
+              <SelectItem value="mexico">México</SelectItem>
+              <SelectItem value="argentina">Argentina</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Celular</Label>
+          <div className="flex gap-2">
+            <Select value={codigoPais} onValueChange={setCodigoPais}>
+              <SelectTrigger className={cn(inputClass, "w-[120px]")}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="+1">🇺🇸 +1</SelectItem>
+                <SelectItem value="+52">🇲🇽 +52</SelectItem>
+                <SelectItem value="+51">🇵🇪 +51</SelectItem>
+                <SelectItem value="+56">🇨🇱 +56</SelectItem>
+                <SelectItem value="+57">🇨🇴 +57</SelectItem>
+                <SelectItem value="+54">🇦🇷 +54</SelectItem>
+              </SelectContent>
+            </Select>
+            <Input
+              value={celular}
+              onChange={(e) => setCelular(e.target.value)}
+              placeholder="Número"
+              className={inputClass}
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Cargo en empresa</Label>
+          <Input value={cargoEmpresa} onChange={(e) => setCargoEmpresa(e.target.value)} className={inputClass} />
         </div>
 
         <div className="space-y-2">
           <Label>Correo</Label>
           <Input type="email" value={correo} onChange={(e) => setCorreo(e.target.value)} className={inputClass} />
-        </div>
-
-        <div className="space-y-2">
-          <Label>Contacto</Label>
-          <Input value={contacto} onChange={(e) => setContacto(e.target.value)} className={inputClass} />
-        </div>
-
-        <div className="space-y-2">
-          <Label>Cargo</Label>
-          <Select defaultValue="gerente">
-            <SelectTrigger className={inputClass}>
-              <SelectValue placeholder="Selecciona" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="gerente">Gerente de Exportación</SelectItem>
-              <SelectItem value="supervisor">Supervisor</SelectItem>
-              <SelectItem value="operador">Operador</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
       </div>
     </div>
@@ -175,19 +192,53 @@ function PerfilSection() {
 
 /* === Sección: Empresa === */
 function EmpresaSection() {
-  const [razonSocial, setRazonSocial] = useState("WUILIO PERU S.A.C.")
+  const [nombreEmpresa, setNombreEmpresa] = useState("WUILIO PERU S.A.C.")
   const [ruc, setRuc] = useState("20123456789")
-  const [direccion, setDireccion] = useState("Av. Principal 123, Lima")
-  const [telefono, setTelefono] = useState("+51 1 234 5678")
+  const [tipoEmpresa, setTipoEmpresa] = useState<string[]>(["exportador", "importador"])
+  const [showTipoDropdown, setShowTipoDropdown] = useState(false)
+  const [pais, setPais] = useState("peru")
+  const [ciudad, setCiudad] = useState("lima")
+  const [direccion, setDireccion] = useState("Av. Principal 123")
+
+  // Representante Legal
+  const [nombreRepresentante, setNombreRepresentante] = useState("Carlos Rodríguez")
+  const [documentoRepresentante, setDocumentoRepresentante] = useState("12345678")
+  const [paisNacimientoRep, setPaisNacimientoRep] = useState("peru")
+  const [codigoPaisRep, setCodigoPaisRep] = useState("+51")
+  const [celularRep, setCelularRep] = useState("987654321")
+  const [correoRep, setCorreoRep] = useState("carlos.rodriguez@wuilio.com")
+
+  const tiposEmpresa = [
+    { id: "exportador", label: "Exportador" },
+    { id: "importador", label: "Importador" },
+    { id: "agente", label: "Agente de Aduana" },
+    { id: "transporte", label: "Transporte" },
+    { id: "operador", label: "Operador Logístico" },
+    { id: "deposito", label: "Depósito Temporal" },
+    { id: "almacen", label: "Almacén" },
+  ]
+
+  const toggleTipoEmpresa = (id: string) => {
+    setTipoEmpresa((prev) => (prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id]))
+  }
+
+  const getTipoEmpresaLabel = () => {
+    if (tipoEmpresa.length === 0) return "Seleccionar"
+    if (tipoEmpresa.length === 1) {
+      return tiposEmpresa.find((t) => t.id === tipoEmpresa[0])?.label
+    }
+    return `${tipoEmpresa.length} seleccionados`
+  }
 
   return (
     <div className="space-y-6">
       <h2 className={sectionTitle}>Información de Empresa</h2>
 
+      {/* Datos de la Empresa */}
       <div className="space-y-4 text-sm">
         <div className="space-y-2">
-          <Label>Razón Social</Label>
-          <Input value={razonSocial} onChange={(e) => setRazonSocial(e.target.value)} className={inputClass} />
+          <Label>Nombre de Empresa</Label>
+          <Input value={nombreEmpresa} onChange={(e) => setNombreEmpresa(e.target.value)} className={inputClass} />
         </div>
 
         <div className="space-y-2">
@@ -196,34 +247,173 @@ function EmpresaSection() {
         </div>
 
         <div className="space-y-2">
+          <Label>Tipo de Empresa</Label>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowTipoDropdown(!showTipoDropdown)}
+              className={cn(inputClass, "flex items-center justify-between cursor-pointer hover:bg-muted/60")}
+            >
+              <span>{getTipoEmpresaLabel()}</span>
+              <svg className="h-4 w-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {showTipoDropdown && (
+              <div className="absolute z-10 mt-1 w-full rounded-md border bg-popover p-2 shadow-md">
+                {tiposEmpresa.map((tipo) => (
+                  <div
+                    key={tipo.id}
+                    className="flex items-center space-x-2 rounded-sm px-2 py-1.5 hover:bg-accent cursor-pointer"
+                    onClick={() => toggleTipoEmpresa(tipo.id)}
+                  >
+                    <Checkbox checked={tipoEmpresa.includes(tipo.id)} />
+                    <label className="text-sm cursor-pointer flex-1">{tipo.label}</label>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-2">
           <Label>País</Label>
-          <Select defaultValue="peru">
+          <Select value={pais} onValueChange={setPais}>
             <SelectTrigger className={inputClass}>
-              <SelectValue placeholder="Selecciona" />
+              <SelectValue placeholder="Seleccionar" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="peru">Perú</SelectItem>
               <SelectItem value="chile">Chile</SelectItem>
               <SelectItem value="colombia">Colombia</SelectItem>
+              <SelectItem value="mexico">México</SelectItem>
+              <SelectItem value="argentina">Argentina</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Ciudad</Label>
+          <Input value={ciudad} onChange={(e) => setCiudad(e.target.value)} className={inputClass} />
         </div>
 
         <div className="space-y-2">
           <Label>Dirección</Label>
           <Input value={direccion} onChange={(e) => setDireccion(e.target.value)} className={inputClass} />
         </div>
+      </div>
 
-        <div className="space-y-2">
-          <Label>Teléfono</Label>
-          <Input value={telefono} onChange={(e) => setTelefono(e.target.value)} className={inputClass} />
+      <Separator className="my-6" />
+
+      {/* Representante Legal */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Representante Legal</h3>
+
+        <div className="space-y-4 text-sm">
+          <div className="space-y-2">
+            <Label>Nombres y Apellidos</Label>
+            <Input
+              value={nombreRepresentante}
+              onChange={(e) => setNombreRepresentante(e.target.value)}
+              className={inputClass}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Documento</Label>
+            <Input
+              value={documentoRepresentante}
+              onChange={(e) => setDocumentoRepresentante(e.target.value)}
+              className={inputClass}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>País de Nacimiento</Label>
+            <Select value={paisNacimientoRep} onValueChange={setPaisNacimientoRep}>
+              <SelectTrigger className={inputClass}>
+                <SelectValue placeholder="Seleccionar" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="peru">Perú</SelectItem>
+                <SelectItem value="chile">Chile</SelectItem>
+                <SelectItem value="colombia">Colombia</SelectItem>
+                <SelectItem value="mexico">México</SelectItem>
+                <SelectItem value="argentina">Argentina</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Celular</Label>
+            <div className="flex gap-2">
+              <Select value={codigoPaisRep} onValueChange={setCodigoPaisRep}>
+                <SelectTrigger className={cn(inputClass, "w-[120px]")}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="+1">🇺🇸 +1</SelectItem>
+                  <SelectItem value="+52">🇲🇽 +52</SelectItem>
+                  <SelectItem value="+51">🇵🇪 +51</SelectItem>
+                  <SelectItem value="+56">🇨🇱 +56</SelectItem>
+                  <SelectItem value="+57">🇨🇴 +57</SelectItem>
+                  <SelectItem value="+54">🇦🇷 +54</SelectItem>
+                </SelectContent>
+              </Select>
+              <Input
+                value={celularRep}
+                onChange={(e) => setCelularRep(e.target.value)}
+                placeholder="Número"
+                className={inputClass}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Correo</Label>
+            <Input
+              type="email"
+              value={correoRep}
+              onChange={(e) => setCorreoRep(e.target.value)}
+              className={inputClass}
+            />
+          </div>
+        </div>
+      </div>
+
+      <Separator className="my-6" />
+
+      {/* Documentos */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Documentos</h3>
+
+        <div className="space-y-4 text-sm">
+          <div className="space-y-2">
+            <Label>Ficha RUC</Label>
+            <div className="flex items-center gap-2">
+              <Input type="file" accept=".pdf,.jpg,.png" className={inputClass} />
+              <Button variant="outline" size="sm" className="shrink-0 bg-transparent">
+                <Upload className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Vigencia de Poder</Label>
+            <div className="flex items-center gap-2">
+              <Input type="file" accept=".pdf,.jpg,.png" className={inputClass} />
+              <Button variant="outline" size="sm" className="shrink-0 bg-transparent">
+                <Upload className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   )
 }
 
-/* === Usuarios === */
+/* === Sección: Usuarios === */
 function UsuariosSection({ onAddUser }: { onAddUser: () => void }) {
   return (
     <div className="space-y-6">

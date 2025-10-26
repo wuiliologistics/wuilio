@@ -2,57 +2,182 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { FileText, Package, Anchor, FileCheck, Plus, X } from "lucide-react"
+import { FileText, Package, EarthIcon, LucideContainer as LucideContainerIcon, Plus, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
+import { mockProductos } from "@/lib/mock-data-productos"
 
 interface Product {
   id: string
+  productoId: string // Added to track selected product
   description: string
-  fobTotal: string
-  quantity: string
-  packaging: string
-  secondaryPackaging: string
-  tariffCode: string
-  commercialUnits: string
-  netWeight: string
-  grossWeight: string
+  formatoPresentacion: string
+  paisOrigen: string
+  precioFobUnitario: number
+  dimensiones: string
+  cantidadExportar: number
+  descuento: number
+  descuentoTipo: "porcentaje" | "monto"
+  certificados: string[]
+  partidaArancelaria: string
+  empaqueBase: string
+  empaqueSecundario: string
+  empaqueSecundarioUnidades: number // Max units per secondary package
+  cantidadEmpaquesSecundarios: number // Calculated number of secondary packages
+  unidadesComerciales: number
+  pesoNetoUnitario: number
+  pesoBrutoUnitario: number
+  pesoNetoTotal: number
+  pesoBrutoTotal: number
+  unidadesComercialesTotal: number
+  precioFobTotal: number
 }
 
 export default function NuevaOrdenPage() {
   const router = useRouter()
+  const [tipoEnvio, setTipoEnvio] = useState<string>("")
   const [products, setProducts] = useState<Product[]>([
     {
       id: "1",
+      productoId: "",
       description: "",
-      fobTotal: "",
-      quantity: "",
-      packaging: "",
-      secondaryPackaging: "",
-      tariffCode: "",
-      commercialUnits: "",
-      netWeight: "",
-      grossWeight: "",
+      formatoPresentacion: "",
+      paisOrigen: "",
+      precioFobUnitario: 0,
+      dimensiones: "",
+      cantidadExportar: 0,
+      descuento: 0,
+      descuentoTipo: "porcentaje",
+      certificados: [],
+      partidaArancelaria: "",
+      empaqueBase: "",
+      empaqueSecundario: "",
+      empaqueSecundarioUnidades: 0,
+      cantidadEmpaquesSecundarios: 0,
+      unidadesComerciales: 0,
+      pesoNetoUnitario: 0,
+      pesoBrutoUnitario: 0,
+      pesoNetoTotal: 0,
+      pesoBrutoTotal: 0,
+      unidadesComercialesTotal: 0,
+      precioFobTotal: 0,
     },
   ])
+
+  const handleProductSelect = (productIndex: number, productoId: string) => {
+    const selectedProducto = mockProductos.find((p) => p.id === productoId)
+    if (!selectedProducto) return
+
+    const updatedProducts = [...products]
+    updatedProducts[productIndex] = {
+      ...updatedProducts[productIndex],
+      productoId: selectedProducto.id,
+      description: `${selectedProducto.codigo_producto} - ${selectedProducto.descripcion_comercial}`,
+      formatoPresentacion: selectedProducto.formato_comercial,
+      paisOrigen: selectedProducto.pais_origen,
+      precioFobUnitario: selectedProducto.precio_fob_usd,
+      dimensiones: selectedProducto.dimensiones_cm,
+      partidaArancelaria: selectedProducto.hs_code,
+      empaqueBase: selectedProducto.empaque_base,
+      empaqueSecundario: `${selectedProducto.cantidad_maxima_empaque_secundario} ${selectedProducto.empaque_secundario}`,
+      empaqueSecundarioUnidades: selectedProducto.cantidad_maxima_empaque_secundario,
+      unidadesComerciales: selectedProducto.unidades_comerciales_valor,
+      pesoNetoUnitario: selectedProducto.peso_neto_kg,
+      pesoBrutoUnitario: selectedProducto.peso_bruto_kg,
+    }
+
+    if (updatedProducts[productIndex].cantidadExportar > 0) {
+      calculateTotals(updatedProducts, productIndex)
+    }
+
+    setProducts(updatedProducts)
+  }
+
+  const handleQuantityChange = (productIndex: number, cantidad: number) => {
+    const updatedProducts = [...products]
+    updatedProducts[productIndex].cantidadExportar = cantidad
+    calculateTotals(updatedProducts, productIndex)
+    setProducts(updatedProducts)
+  }
+
+  const handleDiscountChange = (productIndex: number, descuento: number, tipo: "porcentaje" | "monto") => {
+    const updatedProducts = [...products]
+    updatedProducts[productIndex].descuento = descuento
+    updatedProducts[productIndex].descuentoTipo = tipo
+    calculateTotals(updatedProducts, productIndex)
+    setProducts(updatedProducts)
+  }
+
+  const handleCertificateToggle = (productIndex: number, certificate: string) => {
+    const updatedProducts = [...products]
+    const currentCertificates = updatedProducts[productIndex].certificados
+
+    if (currentCertificates.includes(certificate)) {
+      updatedProducts[productIndex].certificados = currentCertificates.filter((c) => c !== certificate)
+    } else {
+      updatedProducts[productIndex].certificados = [...currentCertificates, certificate]
+    }
+
+    setProducts(updatedProducts)
+  }
+
+  const calculateTotals = (productsArray: Product[], index: number) => {
+    const product = productsArray[index]
+    const cantidad = product.cantidadExportar
+
+    product.pesoNetoTotal = product.pesoNetoUnitario * cantidad
+    product.pesoBrutoTotal = product.pesoBrutoUnitario * cantidad
+    product.unidadesComercialesTotal = product.unidadesComerciales * cantidad
+
+    if (product.empaqueSecundarioUnidades > 0) {
+      product.cantidadEmpaquesSecundarios = Math.ceil(cantidad / product.empaqueSecundarioUnidades)
+    } else {
+      product.cantidadEmpaquesSecundarios = 0
+    }
+
+    const subtotal = product.precioFobUnitario * cantidad
+    let descuentoMonto = 0
+
+    if (product.descuentoTipo === "porcentaje") {
+      descuentoMonto = (subtotal * product.descuento) / 100
+    } else {
+      descuentoMonto = product.descuento
+    }
+
+    product.precioFobTotal = subtotal - descuentoMonto
+  }
 
   const addProduct = () => {
     setProducts([
       ...products,
       {
         id: Date.now().toString(),
+        productoId: "",
         description: "",
-        fobTotal: "",
-        quantity: "",
-        packaging: "",
-        secondaryPackaging: "",
-        tariffCode: "",
-        commercialUnits: "",
-        netWeight: "",
-        grossWeight: "",
+        formatoPresentacion: "",
+        paisOrigen: "",
+        precioFobUnitario: 0,
+        dimensiones: "",
+        cantidadExportar: 0,
+        descuento: 0,
+        descuentoTipo: "porcentaje",
+        certificados: [],
+        partidaArancelaria: "",
+        empaqueBase: "",
+        empaqueSecundario: "",
+        empaqueSecundarioUnidades: 0,
+        cantidadEmpaquesSecundarios: 0,
+        unidadesComerciales: 0,
+        pesoNetoUnitario: 0,
+        pesoBrutoUnitario: 0,
+        pesoNetoTotal: 0,
+        pesoBrutoTotal: 0,
+        unidadesComercialesTotal: 0,
+        precioFobTotal: 0,
       },
     ])
   }
@@ -64,15 +189,42 @@ export default function NuevaOrdenPage() {
   }
 
   const handleSaveDraft = () => {
-    // TODO: Implement save draft logic
     console.log("[v0] Saving draft...")
     router.push("/ordenes")
   }
 
   const handleCreateOrder = () => {
-    // TODO: Implement create order logic with validation
     console.log("[v0] Creating order...")
     router.push("/ordenes")
+  }
+
+  const getIncotermsOptions = () => {
+    if (tipoEnvio === "maritimo") {
+      return [
+        { value: "exw", label: "EXW (Ex Works)" },
+        { value: "fca", label: "FCA (Free Carrier)" },
+        { value: "fas", label: "FAS (Free Alongside Ship)" },
+        { value: "fob", label: "FOB (Free On Board)" },
+        { value: "cfr", label: "CFR (Cost and Freight)" },
+        { value: "cif", label: "CIF (Cost, Insurance and Freight)" },
+        { value: "cpt", label: "CPT (Carriage Paid To)" },
+        { value: "cip", label: "CIP (Carriage and Insurance Paid To)" },
+        { value: "dap", label: "DAP (Delivered At Place)" },
+        { value: "dpu", label: "DPU (Delivered at Place Unloaded)" },
+        { value: "ddp", label: "DDP (Delivered Duty Paid)" },
+      ]
+    } else if (tipoEnvio === "aereo" || tipoEnvio === "terrestre") {
+      return [
+        { value: "exw", label: "EXW (Ex Works)" },
+        { value: "fca", label: "FCA (Free Carrier)" },
+        { value: "cpt", label: "CPT (Carriage Paid To)" },
+        { value: "cip", label: "CIP (Carriage and Insurance Paid To)" },
+        { value: "dap", label: "DAP (Delivered At Place)" },
+        { value: "dpu", label: "DPU (Delivered at Place Unloaded)" },
+        { value: "ddp", label: "DDP (Delivered Duty Paid)" },
+      ]
+    }
+    return []
   }
 
   return (
@@ -81,15 +233,27 @@ export default function NuevaOrdenPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <FileText className="h-5 w-5 text-blue-600" />
+            <FileText className="h-5 w-5 text-black" />
             Datos Base
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             <div className="space-y-2">
+              <Label htmlFor="proforma">Proforma</Label>
+              <Input id="proforma" className="w-full" placeholder="Número de proforma" />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="shipper">Shipper</Label>
-              <Input id="shipper" className="w-full" defaultValue="WUILIO PERU S.A.C." disabled />
+              <Select>
+                <SelectTrigger id="shipper" className="w-full">
+                  <SelectValue placeholder="Seleccionar shipper" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="wuilio">WUILIO PERU S.A.C.</SelectItem>
+                  <SelectItem value="other">Otro shipper</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="consignee">Consignee</Label>
@@ -103,6 +267,9 @@ export default function NuevaOrdenPage() {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             <div className="space-y-2">
               <Label htmlFor="notify">Notify</Label>
               <Select>
@@ -112,35 +279,6 @@ export default function NuevaOrdenPage() {
                 <SelectContent>
                   <SelectItem value="ceramicos">CERAMICOS DEL SUR S.A.</SelectItem>
                   <SelectItem value="other">Otro notify</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            <div className="space-y-2">
-              <Label htmlFor="incoterms">Incoterms® 2020</Label>
-              <Select>
-                <SelectTrigger id="incoterms" className="w-full">
-                  <SelectValue placeholder="Seleccionar incoterm" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="fob">FOB</SelectItem>
-                  <SelectItem value="cif">CIF</SelectItem>
-                  <SelectItem value="exw">EXW</SelectItem>
-                  <SelectItem value="fca">FCA</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="freight-terms">Términos de Flete</Label>
-              <Select>
-                <SelectTrigger id="freight-terms" className="w-full">
-                  <SelectValue placeholder="Seleccionar términos" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="collect">Collect</SelectItem>
-                  <SelectItem value="prepaid">Prepaid</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -156,9 +294,6 @@ export default function NuevaOrdenPage() {
                 </SelectContent>
               </Select>
             </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             <div className="space-y-2">
               <Label htmlFor="destination">Destino</Label>
               <Select>
@@ -171,21 +306,86 @@ export default function NuevaOrdenPage() {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             <div className="space-y-2">
-              <Label htmlFor="cargo-type">Tipo de Carga</Label>
-              <Select>
-                <SelectTrigger id="cargo-type" className="w-full">
-                  <SelectValue placeholder="Seleccionar tipo" />
+              <Label htmlFor="tipo-envio">Tipo de Envío</Label>
+              <Select onValueChange={setTipoEnvio}>
+                <SelectTrigger id="tipo-envio" className="w-full">
+                  <SelectValue placeholder="Seleccionar tipo de envío" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="fcl">FCL (Full Container Load)</SelectItem>
-                  <SelectItem value="lcl">LCL (Less than Container Load)</SelectItem>
+                  <SelectItem value="maritimo">Marítimo</SelectItem>
+                  <SelectItem value="aereo">Aéreo</SelectItem>
+                  <SelectItem value="terrestre">Terrestre</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="proforma">Proforma/Referencia</Label>
-              <Input id="proforma" className="w-full" placeholder="REF" />
+              <Label htmlFor="incoterms">Incoterms® 2020</Label>
+              <Select disabled={!tipoEnvio}>
+                <SelectTrigger id="incoterms" className="w-full">
+                  <SelectValue placeholder={tipoEnvio ? "Seleccionar incoterm" : "Primero seleccione tipo de envío"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {getIncotermsOptions().map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="condiciones-pago">Condiciones de Pago Comercial</Label>
+              <Input id="condiciones-pago" className="w-full" placeholder="Ej: 30% adelanto, 70% contra BL" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            <div className="space-y-2">
+              <Label htmlFor="condicion-flete">Condición Flete</Label>
+              <Select>
+                <SelectTrigger id="condicion-flete" className="w-full">
+                  <SelectValue placeholder="Seleccionar condición" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="prepaid">Prepaid</SelectItem>
+                  <SelectItem value="collect">Collect</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="regimen-aduanero">Régimen Aduanero Principal</Label>
+              <Select>
+                <SelectTrigger id="regimen-aduanero" className="w-full">
+                  <SelectValue placeholder="Seleccionar régimen" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="exportacion-definitiva">Exportación Definitiva</SelectItem>
+                  <SelectItem value="exportacion-temporal">Exportación Temporal</SelectItem>
+                  <SelectItem value="reexportacion">Reexportación</SelectItem>
+                  <SelectItem value="exportacion-simplificada">Exportación Simplificada</SelectItem>
+                  <SelectItem value="envios-urgencia">Envíos de Urgencia</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="tratamiento-especial">Tratamiento Especial</Label>
+              <Select>
+                <SelectTrigger id="tratamiento-especial" className="w-full">
+                  <SelectValue placeholder="Seleccionar tratamiento" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ninguno">Ninguno</SelectItem>
+                  <SelectItem value="drawback">Drawback</SelectItem>
+                  <SelectItem value="reposicion-franquicia">Reposición de Mercancías en Franquicia</SelectItem>
+                  <SelectItem value="admision-temporal">Admisión Temporal</SelectItem>
+                  <SelectItem value="zona-franca">Zona Franca</SelectItem>
+                  <SelectItem value="regimen-especial">Régimen Especial</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </CardContent>
@@ -195,7 +395,7 @@ export default function NuevaOrdenPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Package className="h-5 w-5 text-blue-600" />
+            <Package className="h-5 w-5 text-foreground" />
             Productos
           </CardTitle>
         </CardHeader>
@@ -214,56 +414,245 @@ export default function NuevaOrdenPage() {
               <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                 <div className="space-y-2">
                   <Label htmlFor={`description-${product.id}`}>
-                    Descripción del Producto <span className="text-red-500">*</span>
+                    Código + Descripción Comercial <span className="text-red-500">*</span>
                   </Label>
-                  <Select>
+                  <Select value={product.productoId} onValueChange={(value) => handleProductSelect(index, value)}>
                     <SelectTrigger id={`description-${product.id}`} className="w-full">
                       <SelectValue placeholder="Seleccionar producto" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="tiles">Porcelain Tiles Caja de 4 piezas (60x60 cm)</SelectItem>
-                      <SelectItem value="other">Otro producto</SelectItem>
+                      {mockProductos
+                        .filter((p) => p.estado === "Activo")
+                        .map((producto) => (
+                          <SelectItem key={producto.id} value={producto.id}>
+                            {producto.codigo_producto} - {producto.descripcion_comercial}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor={`fob-${product.id}`}>Total FOB (USD)</Label>
-                  <Input id={`fob-${product.id}`} className="w-full" type="number" placeholder="12,500" />
+                  <Label htmlFor={`formato-${product.id}`}>Formato de Presentación</Label>
+                  <Input
+                    id={`formato-${product.id}`}
+                    className="w-full bg-muted"
+                    value={product.formatoPresentacion}
+                    placeholder="Automático"
+                    readOnly
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor={`quantity-${product.id}`}>Cantidad</Label>
-                  <Input id={`quantity-${product.id}`} className="w-full" type="number" placeholder="1000" />
+                  <Label htmlFor={`pais-origen-${product.id}`}>País de Origen</Label>
+                  <Input
+                    id={`pais-origen-${product.id}`}
+                    className="w-full bg-muted"
+                    value={product.paisOrigen}
+                    placeholder="Automático"
+                    readOnly
+                  />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                 <div className="space-y-2">
-                  <Label htmlFor={`packaging-${product.id}`}>Empaque (UC)</Label>
-                  <Input id={`packaging-${product.id}`} className="w-full" placeholder="Cajas" />
+                  <Label htmlFor={`precio-unitario-${product.id}`}>Precio FOB Unitario (USD)</Label>
+                  <Input
+                    id={`precio-unitario-${product.id}`}
+                    className="w-full bg-muted"
+                    type="number"
+                    value={product.precioFobUnitario || ""}
+                    placeholder="Automático"
+                    readOnly
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor={`secondary-${product.id}`}>Empaque Secundario</Label>
-                  <Input id={`secondary-${product.id}`} className="w-full" placeholder="48 pallets" />
+                  <Label htmlFor={`cantidad-${product.id}`}>
+                    Cantidad a Exportar <span className="text-red-500">*</span>
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id={`cantidad-${product.id}`}
+                      className="w-full"
+                      type="number"
+                      value={product.cantidadExportar || ""}
+                      onChange={(e) => handleQuantityChange(index, Number(e.target.value))}
+                      placeholder="Ingrese cantidad"
+                    />
+                    {product.empaqueBase && (
+                      <span className="text-sm text-muted-foreground whitespace-nowrap">{product.empaqueBase}</span>
+                    )}
+                  </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor={`tariff-${product.id}`}>Partida Arancelaria</Label>
-                  <Input id={`tariff-${product.id}`} className="w-full" placeholder="200.01029.10" />
+                  <Label htmlFor={`descuento-${product.id}`}>Descuento (% o USD)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id={`descuento-${product.id}`}
+                      className="w-full"
+                      type="number"
+                      value={product.descuento || ""}
+                      onChange={(e) => handleDiscountChange(index, Number(e.target.value), product.descuentoTipo)}
+                      placeholder="0"
+                    />
+                    <Select
+                      value={product.descuentoTipo}
+                      onValueChange={(value: "porcentaje" | "monto") =>
+                        handleDiscountChange(index, product.descuento, value)
+                      }
+                    >
+                      <SelectTrigger className="w-24">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="porcentaje">%</SelectItem>
+                        <SelectItem value="monto">USD</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                 <div className="space-y-2">
-                  <Label htmlFor={`commercial-${product.id}`}>Unidades Comerciales Totales</Label>
-                  <Input id={`commercial-${product.id}`} className="w-full" placeholder="2,755.4 m2" />
+                  <Label htmlFor={`fob-total-${product.id}`}>Precio FOB Total (USD)</Label>
+                  <Input
+                    id={`fob-total-${product.id}`}
+                    className="w-full bg-muted"
+                    type="number"
+                    value={product.precioFobTotal.toFixed(2)}
+                    placeholder="Calculado"
+                    readOnly
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor={`net-weight-${product.id}`}>Peso Neto Total (Kg)</Label>
-                  <Input id={`net-weight-${product.id}`} className="w-full" type="number" placeholder="25,000" />
+                  <Label htmlFor={`partida-${product.id}`}>Partida Arancelaria</Label>
+                  <Input
+                    id={`partida-${product.id}`}
+                    className="w-full bg-muted"
+                    value={product.partidaArancelaria}
+                    placeholder="Automático"
+                    readOnly
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor={`gross-weight-${product.id}`}>Peso Bruto Total (Kg)</Label>
-                  <Input id={`gross-weight-${product.id}`} className="w-full" type="number" placeholder="26,000" />
+                  <Label htmlFor={`cantidad-empaque-secundario-${product.id}`}>Cantidad de Empaques Secundarios</Label>
+                  <Input
+                    id={`cantidad-empaque-secundario-${product.id}`}
+                    className="w-full bg-muted"
+                    value={
+                      product.cantidadEmpaquesSecundarios > 0
+                        ? `${product.cantidadEmpaquesSecundarios} ${product.empaqueSecundario.split(" ").pop() || ""}`
+                        : ""
+                    }
+                    placeholder="Calculado"
+                    readOnly
+                  />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                <div className="space-y-2">
+                  <Label htmlFor={`unidades-${product.id}`}>Unidades Físicas Totales</Label>
+                  <Input
+                    id={`unidades-${product.id}`}
+                    className="w-full bg-muted"
+                    value={product.unidadesComercialesTotal || ""}
+                    placeholder="Calculado"
+                    readOnly
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`dimensiones-${product.id}`}>Dimensiones de unidad base</Label>
+                  <Input
+                    id={`dimensiones-${product.id}`}
+                    className="w-full bg-muted"
+                    value={product.dimensiones}
+                    placeholder="Automático"
+                    readOnly
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`peso-neto-${product.id}`}>Peso Neto Total (Kg)</Label>
+                  <Input
+                    id={`peso-neto-${product.id}`}
+                    className="w-full bg-muted"
+                    type="number"
+                    value={product.pesoNetoTotal || ""}
+                    placeholder="Calculado"
+                    readOnly
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                <div className="space-y-2">
+                  <Label htmlFor={`peso-bruto-${product.id}`}>Peso Bruto Total (Kg)</Label>
+                  <Input
+                    id={`peso-bruto-${product.id}`}
+                    className="w-full bg-muted"
+                    type="number"
+                    value={product.pesoBrutoTotal || ""}
+                    placeholder="Calculado"
+                    readOnly
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`certificados-${product.id}`}>Certificados requeridos</Label>
+                  <Select value={product.certificados.length > 0 ? "selected" : ""}>
+                    <SelectTrigger id={`certificados-${product.id}`} className="w-full h-10">
+                      <SelectValue placeholder="Seleccionar certificados">
+                        {product.certificados.length > 0
+                          ? `${product.certificados.length} seleccionado${product.certificados.length > 1 ? "s" : ""}`
+                          : "Seleccionar certificados"}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <div className="space-y-2 p-2">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`cert-origen-${product.id}`}
+                            checked={product.certificados.includes("Certificado de Origen")}
+                            onCheckedChange={() => handleCertificateToggle(index, "Certificado de Origen")}
+                          />
+                          <label htmlFor={`cert-origen-${product.id}`} className="text-sm cursor-pointer">
+                            Certificado de Origen
+                          </label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`cert-fito-${product.id}`}
+                            checked={product.certificados.includes("Certificado Fitosanitario")}
+                            onCheckedChange={() => handleCertificateToggle(index, "Certificado Fitosanitario")}
+                          />
+                          <label htmlFor={`cert-fito-${product.id}`} className="text-sm cursor-pointer">
+                            Certificado Fitosanitario
+                          </label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`cert-calidad-${product.id}`}
+                            checked={product.certificados.includes("Certificado de Calidad")}
+                            onCheckedChange={() => handleCertificateToggle(index, "Certificado de Calidad")}
+                          />
+                          <label htmlFor={`cert-calidad-${product.id}`} className="text-sm cursor-pointer">
+                            Certificado de Calidad
+                          </label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`cert-inspeccion-${product.id}`}
+                            checked={product.certificados.includes("Certificado de Inspección")}
+                            onCheckedChange={() => handleCertificateToggle(index, "Certificado de Inspección")}
+                          />
+                          <label htmlFor={`cert-inspeccion-${product.id}`} className="text-sm cursor-pointer">
+                            Certificado de Inspección
+                          </label>
+                        </div>
+                      </div>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">{/* Empty cell for grid alignment */}</div>
               </div>
             </div>
           ))}
@@ -279,7 +668,7 @@ export default function NuevaOrdenPage() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-base">
-            <Anchor className="h-5 w-5 text-blue-600" />
+            <EarthIcon className="h-5 w-5 text-black" />
             Logística Internacional
           </CardTitle>
           <Button variant="outline" size="sm">
@@ -377,7 +766,7 @@ export default function NuevaOrdenPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <FileCheck className="h-5 w-5 text-blue-600" />
+            <LucideContainerIcon className="h-5 w-5 text-black" />
             Logística en Origen
           </CardTitle>
         </CardHeader>

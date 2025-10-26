@@ -150,7 +150,7 @@ export function Sidebar() {
                     </SelectItem>
                   ))}
                   <SelectSeparator />
-                  <SelectItem value="register-new" className="text-blue-600 font-medium">
+                  <SelectItem value="register-new" className="text-gray-900 font-medium">
                     <div className="flex items-center">
                       <Plus className="mr-2 h-4 w-4" />
                       Registrar Empresa
@@ -185,7 +185,7 @@ export function Sidebar() {
                                 className={cn(
                                   "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                                   isActive
-                                    ? "bg-blue-50 text-blue-600"
+                                    ? "bg-gray-100 text-gray-900"
                                     : "text-foreground hover:bg-accent hover:text-accent-foreground",
                                   isCollapsed && "justify-center px-2",
                                 )}
@@ -223,7 +223,7 @@ export function Sidebar() {
                     isCollapsed && "justify-center",
                   )}
                 >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-sm font-semibold text-white shrink-0">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-900 text-sm font-semibold text-white shrink-0">
                     JM
                   </div>
                   {!isCollapsed && (
@@ -238,24 +238,24 @@ export function Sidebar() {
                 side="top"
                 align="start"
                 sideOffset={8}
-                className="w-64 p-0 bg-[#1f1f1f] border-[#2a2a2a] rounded-xl shadow-xl"
+                className="w-64 p-0 bg-white border-border rounded-xl shadow-xl"
               >
                 <div className="p-4">
-                  <p className="text-sm text-gray-300">juan.maldonado@wuilio.com</p>
+                  <p className="text-sm text-foreground">juan.maldonado@wuilio.com</p>
                 </div>
-                <Separator className="bg-[#2a2a2a]" />
+                <Separator className="bg-border" />
                 <div className="p-2">
                   <button
                     onClick={() => {
                       setIsUserMenuOpen(false)
                       setIsSettingsOpen(true)
                     }}
-                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-200 transition-colors hover:bg-[#2a2a2a]"
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-foreground transition-colors hover:bg-accent"
                   >
                     <Settings className="h-4 w-4" />
                     <span>Configuraciones</span>
                   </button>
-                  <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-200 transition-colors hover:bg-[#2a2a2a]">
+                  <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-foreground transition-colors hover:bg-accent">
                     <LogOut className="h-4 w-4" />
                     <span>Cerrar sesión</span>
                   </button>

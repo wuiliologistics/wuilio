@@ -5,6 +5,7 @@ export interface Notify {
   ruc: string
   direccion: string
   ciudad: string
+  region?: string // Added region field to match cliente structure
   zipCode: string
   contacto: string
   telefono: string

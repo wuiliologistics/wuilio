@@ -45,7 +45,7 @@ export function Header() {
               <Bell className="h-5 w-5" />
             </Button>
 
-            <Button onClick={() => router.push("/ordenes/nueva")} className="bg-blue-600 hover:bg-blue-700">
+            <Button onClick={() => router.push("/ordenes/nueva")} className="bg-black hover:bg-gray-800">
               + Nueva Orden
             </Button>
           </div>
@@ -58,7 +58,7 @@ export function Header() {
                 const event = new CustomEvent("openClienteModal")
                 window.dispatchEvent(event)
               }}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-black hover:bg-gray-800"
             >
               + Nuevo Cliente
             </Button>
@@ -72,7 +72,7 @@ export function Header() {
                 const event = new CustomEvent("openProductoModal")
                 window.dispatchEvent(event)
               }}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-black hover:bg-gray-800"
             >
               + Nuevo Producto
             </Button>
