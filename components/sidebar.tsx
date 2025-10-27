@@ -183,7 +183,7 @@ export function Sidebar() {
                               <Link
                                 href={item.href}
                                 className={cn(
-                                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
                                   isActive
                                     ? "bg-gray-100 text-gray-900"
                                     : "text-foreground hover:bg-accent hover:text-accent-foreground",
@@ -228,7 +228,7 @@ export function Sidebar() {
                   </div>
                   {!isCollapsed && (
                     <div className="flex-1 text-left text-sm">
-                      <p className="font-medium text-foreground">Juan Maldonado</p>
+                      <p className="text-foreground font-medium">Juan Maldonado</p>
                       <p className="text-xs text-muted-foreground">Wuilio Workspace</p>
                     </div>
                   )}

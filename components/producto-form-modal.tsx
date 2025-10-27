@@ -139,7 +139,7 @@ export function ProductoFormModal({ open, onClose, onSave, producto }: ProductoF
             {/* 4. Formato Presentación */}
             <div className="space-y-2">
               <div className="flex items-center gap-1.5">
-                <Label htmlFor="formato_presentacion">Formato Presentación</Label>
+                <Label htmlFor="formato_presentacion">Unidad Comercial</Label>
                 <Tooltip>
                   <TooltipTrigger type="button">
                     <Info className="h-4 w-4 text-muted-foreground" />

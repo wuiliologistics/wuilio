@@ -29,6 +29,7 @@ interface Product {
   empaqueSecundarioUnidades: number // Max units per secondary package
   cantidadEmpaquesSecundarios: number // Calculated number of secondary packages
   unidadesComerciales: number
+  unidadesComercialesUnidad: string // Added unit field for physical units display
   pesoNetoUnitario: number
   pesoBrutoUnitario: number
   pesoNetoTotal: number
@@ -59,6 +60,7 @@ export default function NuevaOrdenPage() {
       empaqueSecundarioUnidades: 0,
       cantidadEmpaquesSecundarios: 0,
       unidadesComerciales: 0,
+      unidadesComercialesUnidad: "",
       pesoNetoUnitario: 0,
       pesoBrutoUnitario: 0,
       pesoNetoTotal: 0,
@@ -86,6 +88,7 @@ export default function NuevaOrdenPage() {
       empaqueSecundario: `${selectedProducto.cantidad_maxima_empaque_secundario} ${selectedProducto.empaque_secundario}`,
       empaqueSecundarioUnidades: selectedProducto.cantidad_maxima_empaque_secundario,
       unidadesComerciales: selectedProducto.unidades_comerciales_valor,
+      unidadesComercialesUnidad: selectedProducto.unidad, // Fixed: use 'unidad' field instead of 'unidades_comerciales_unidad'
       pesoNetoUnitario: selectedProducto.peso_neto_kg,
       pesoBrutoUnitario: selectedProducto.peso_bruto_kg,
     }
@@ -172,6 +175,7 @@ export default function NuevaOrdenPage() {
         empaqueSecundarioUnidades: 0,
         cantidadEmpaquesSecundarios: 0,
         unidadesComerciales: 0,
+        unidadesComercialesUnidad: "",
         pesoNetoUnitario: 0,
         pesoBrutoUnitario: 0,
         pesoNetoTotal: 0,
@@ -411,6 +415,7 @@ export default function NuevaOrdenPage() {
                 )}
               </div>
 
+              {/* Row 1: Basic product info */}
               <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                 <div className="space-y-2">
                   <Label htmlFor={`description-${product.id}`}>
@@ -432,7 +437,17 @@ export default function NuevaOrdenPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor={`formato-${product.id}`}>Formato de Presentación</Label>
+                  <Label htmlFor={`partida-${product.id}`}>Partida Arancelaria</Label>
+                  <Input
+                    id={`partida-${product.id}`}
+                    className="w-full bg-muted"
+                    value={product.partidaArancelaria}
+                    placeholder="Automático"
+                    readOnly
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`formato-${product.id}`}>Unidad Comercial</Label>
                   <Input
                     id={`formato-${product.id}`}
                     className="w-full bg-muted"
@@ -441,6 +456,10 @@ export default function NuevaOrdenPage() {
                     readOnly
                   />
                 </div>
+              </div>
+
+              {/* Row 2: Unit-level details */}
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                 <div className="space-y-2">
                   <Label htmlFor={`pais-origen-${product.id}`}>País de Origen</Label>
                   <Input
@@ -451,9 +470,6 @@ export default function NuevaOrdenPage() {
                     readOnly
                   />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                 <div className="space-y-2">
                   <Label htmlFor={`precio-unitario-${product.id}`}>Precio FOB Unitario (USD)</Label>
                   <Input
@@ -466,8 +482,22 @@ export default function NuevaOrdenPage() {
                   />
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor={`dimensiones-${product.id}`}>Dimensiones de Unidad Comercial (cm³) </Label>
+                  <Input
+                    id={`dimensiones-${product.id}`}
+                    className="w-full bg-muted"
+                    value={product.dimensiones}
+                    placeholder="Automático"
+                    readOnly
+                  />
+                </div>
+              </div>
+
+              {/* Row 3: User inputs */}
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                <div className="space-y-2">
                   <Label htmlFor={`cantidad-${product.id}`}>
-                    Cantidad a Exportar <span className="text-red-500">*</span>
+                    Unidades Comerciales Totales <span className="text-red-500">*</span>
                   </Label>
                   <div className="flex items-center gap-2">
                     <Input
@@ -510,94 +540,8 @@ export default function NuevaOrdenPage() {
                     </Select>
                   </div>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                 <div className="space-y-2">
-                  <Label htmlFor={`fob-total-${product.id}`}>Precio FOB Total (USD)</Label>
-                  <Input
-                    id={`fob-total-${product.id}`}
-                    className="w-full bg-muted"
-                    type="number"
-                    value={product.precioFobTotal.toFixed(2)}
-                    placeholder="Calculado"
-                    readOnly
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor={`partida-${product.id}`}>Partida Arancelaria</Label>
-                  <Input
-                    id={`partida-${product.id}`}
-                    className="w-full bg-muted"
-                    value={product.partidaArancelaria}
-                    placeholder="Automático"
-                    readOnly
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor={`cantidad-empaque-secundario-${product.id}`}>Cantidad de Empaques Secundarios</Label>
-                  <Input
-                    id={`cantidad-empaque-secundario-${product.id}`}
-                    className="w-full bg-muted"
-                    value={
-                      product.cantidadEmpaquesSecundarios > 0
-                        ? `${product.cantidadEmpaquesSecundarios} ${product.empaqueSecundario.split(" ").pop() || ""}`
-                        : ""
-                    }
-                    placeholder="Calculado"
-                    readOnly
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                <div className="space-y-2">
-                  <Label htmlFor={`unidades-${product.id}`}>Unidades Físicas Totales</Label>
-                  <Input
-                    id={`unidades-${product.id}`}
-                    className="w-full bg-muted"
-                    value={product.unidadesComercialesTotal || ""}
-                    placeholder="Calculado"
-                    readOnly
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor={`dimensiones-${product.id}`}>Dimensiones de unidad base</Label>
-                  <Input
-                    id={`dimensiones-${product.id}`}
-                    className="w-full bg-muted"
-                    value={product.dimensiones}
-                    placeholder="Automático"
-                    readOnly
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor={`peso-neto-${product.id}`}>Peso Neto Total (Kg)</Label>
-                  <Input
-                    id={`peso-neto-${product.id}`}
-                    className="w-full bg-muted"
-                    type="number"
-                    value={product.pesoNetoTotal || ""}
-                    placeholder="Calculado"
-                    readOnly
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                <div className="space-y-2">
-                  <Label htmlFor={`peso-bruto-${product.id}`}>Peso Bruto Total (Kg)</Label>
-                  <Input
-                    id={`peso-bruto-${product.id}`}
-                    className="w-full bg-muted"
-                    type="number"
-                    value={product.pesoBrutoTotal || ""}
-                    placeholder="Calculado"
-                    readOnly
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor={`certificados-${product.id}`}>Certificados requeridos</Label>
+                  <Label htmlFor={`certificados-${product.id}`}>Certificados Requeridos</Label>
                   <Select value={product.certificados.length > 0 ? "selected" : ""}>
                     <SelectTrigger id={`certificados-${product.id}`} className="w-full h-10">
                       <SelectValue placeholder="Seleccionar certificados">
@@ -651,6 +595,77 @@ export default function NuevaOrdenPage() {
                       </div>
                     </SelectContent>
                   </Select>
+                </div>
+              </div>
+
+              {/* Row 4: Calculated totals */}
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                <div className="space-y-2">
+                  <Label htmlFor={`fob-total-${product.id}`}>Precio FOB Total (USD)</Label>
+                  <Input
+                    id={`fob-total-${product.id}`}
+                    className="w-full bg-muted"
+                    type="number"
+                    value={product.precioFobTotal.toFixed(2)}
+                    placeholder="Calculado"
+                    readOnly
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`cantidad-empaque-secundario-${product.id}`}>
+                    Empaques Secundarios Totales (Bultos)
+                  </Label>
+                  <Input
+                    id={`cantidad-empaque-secundario-${product.id}`}
+                    className="w-full bg-muted"
+                    value={
+                      product.cantidadEmpaquesSecundarios > 0
+                        ? `${product.cantidadEmpaquesSecundarios} ${product.empaqueSecundario.split(" ").pop() || ""}`
+                        : ""
+                    }
+                    placeholder="Calculado"
+                    readOnly
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`unidades-${product.id}`}>Unidades Físicas Totales</Label>
+                  <Input
+                    id={`unidades-${product.id}`}
+                    className="w-full bg-muted"
+                    value={
+                      product.unidadesComercialesTotal > 0 && product.unidadesComercialesUnidad
+                        ? `${product.unidadesComercialesTotal} ${product.unidadesComercialesUnidad}`
+                        : product.unidadesComercialesTotal || ""
+                    }
+                    placeholder="Calculado"
+                    readOnly
+                  />
+                </div>
+              </div>
+
+              {/* Row 5: Weight totals */}
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                <div className="space-y-2">
+                  <Label htmlFor={`peso-neto-${product.id}`}>Peso Neto Total (Kg)</Label>
+                  <Input
+                    id={`peso-neto-${product.id}`}
+                    className="w-full bg-muted"
+                    type="number"
+                    value={product.pesoNetoTotal || ""}
+                    placeholder="Calculado"
+                    readOnly
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`peso-bruto-${product.id}`}>Peso Bruto Total (Kg)</Label>
+                  <Input
+                    id={`peso-bruto-${product.id}`}
+                    className="w-full bg-muted"
+                    type="number"
+                    value={product.pesoBrutoTotal || ""}
+                    placeholder="Calculado"
+                    readOnly
+                  />
                 </div>
                 <div className="space-y-2">{/* Empty cell for grid alignment */}</div>
               </div>
