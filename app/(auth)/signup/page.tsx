@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
@@ -10,11 +10,246 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Progress } from "@/components/ui/progress"
-import { ArrowLeft, ArrowRight, Check, Upload, User, Building2, UserCheck, FileText, CheckCircle2 } from "lucide-react"
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  Upload,
+  User,
+  Building2,
+  UserCheck,
+  FileText,
+  CheckCircle2,
+  Info,
+} from "lucide-react"
 import type { SignupFormData } from "@/types/auth"
-import { COUNTRIES_WORLD, COUNTRIES_AMERICAS } from "@/lib/countries"
-import { getCitiesByCountry } from "@/lib/cities"
+import { COUNTRIES_WORLD } from "@/lib/countries"
 import { Checkbox } from "@/components/ui/checkbox"
+
+const ALL_COUNTRIES = [
+  "Afganistán",
+  "Albania",
+  "Alemania",
+  "Andorra",
+  "Angola",
+  "Antigua y Barbuda",
+  "Arabia Saudita",
+  "Argelia",
+  "Argentina",
+  "Armenia",
+  "Australia",
+  "Austria",
+  "Azerbaiyán",
+  "Bahamas",
+  "Bangladés",
+  "Barbados",
+  "Baréin",
+  "Bélgica",
+  "Belice",
+  "Benín",
+  "Bielorrusia",
+  "Birmania",
+  "Bolivia",
+  "Bosnia y Herzegovina",
+  "Botsuana",
+  "Brasil",
+  "Brunéi",
+  "Bulgaria",
+  "Burkina Faso",
+  "Burundi",
+  "Bután",
+  "Cabo Verde",
+  "Camboya",
+  "Camerún",
+  "Canadá",
+  "Catar",
+  "Chad",
+  "Chile",
+  "China",
+  "Chipre",
+  "Colombia",
+  "Comoras",
+  "Corea del Norte",
+  "Corea del Sur",
+  "Costa de Marfil",
+  "Costa Rica",
+  "Croacia",
+  "Cuba",
+  "Dinamarca",
+  "Dominica",
+  "Ecuador",
+  "Egipto",
+  "El Salvador",
+  "Emiratos Árabes Unidos",
+  "Eritrea",
+  "Eslovaquia",
+  "Eslovenia",
+  "España",
+  "Estados Unidos",
+  "Estonia",
+  "Etiopía",
+  "Filipinas",
+  "Finlandia",
+  "Fiyi",
+  "Francia",
+  "Gabón",
+  "Gambia",
+  "Georgia",
+  "Ghana",
+  "Granada",
+  "Grecia",
+  "Guatemala",
+  "Guinea",
+  "Guinea Ecuatorial",
+  "Guinea-Bisáu",
+  "Guyana",
+  "Haití",
+  "Honduras",
+  "Hungría",
+  "India",
+  "Indonesia",
+  "Irak",
+  "Irán",
+  "Irlanda",
+  "Islandia",
+  "Islas Marshall",
+  "Islas Salomón",
+  "Israel",
+  "Italia",
+  "Jamaica",
+  "Japón",
+  "Jordania",
+  "Kazajistán",
+  "Kenia",
+  "Kirguistán",
+  "Kiribati",
+  "Kuwait",
+  "Laos",
+  "Lesoto",
+  "Letonia",
+  "Líbano",
+  "Liberia",
+  "Libia",
+  "Liechtenstein",
+  "Lituania",
+  "Luxemburgo",
+  "Macedonia del Norte",
+  "Madagascar",
+  "Malasia",
+  "Malaui",
+  "Maldivas",
+  "Malí",
+  "Malta",
+  "Marruecos",
+  "Mauricio",
+  "Mauritania",
+  "México",
+  "Micronesia",
+  "Moldavia",
+  "Mónaco",
+  "Mongolia",
+  "Montenegro",
+  "Mozambique",
+  "Namibia",
+  "Nauru",
+  "Nepal",
+  "Nicaragua",
+  "Níger",
+  "Nigeria",
+  "Noruega",
+  "Nueva Zelanda",
+  "Omán",
+  "Países Bajos",
+  "Pakistán",
+  "Palaos",
+  "Panamá",
+  "Papúa Nueva Guinea",
+  "Paraguay",
+  "Perú",
+  "Polonia",
+  "Portugal",
+  "Reino Unido",
+  "República Centroafricana",
+  "República Checa",
+  "República del Congo",
+  "República Democrática del Congo",
+  "República Dominicana",
+  "Ruanda",
+  "Rumania",
+  "Rusia",
+  "Samoa",
+  "San Cristóbal y Nieves",
+  "San Marino",
+  "San Vicente y las Granadinas",
+  "Santa Lucía",
+  "Santo Tomé y Príncipe",
+  "Senegal",
+  "Serbia",
+  "Seychelles",
+  "Sierra Leona",
+  "Singapur",
+  "Siria",
+  "Somalia",
+  "Sri Lanka",
+  "Suazilandia",
+  "Sudáfrica",
+  "Sudán",
+  "Sudán del Sur",
+  "Suecia",
+  "Suiza",
+  "Surinam",
+  "Tailandia",
+  "Tanzania",
+  "Tayikistán",
+  "Timor Oriental",
+  "Togo",
+  "Tonga",
+  "Trinidad y Tobago",
+  "Túnez",
+  "Turkmenistán",
+  "Turquía",
+  "Tuvalu",
+  "Ucrania",
+  "Uganda",
+  "Uruguay",
+  "Uzbekistán",
+  "Vanuatu",
+  "Venezuela",
+  "Vietnam",
+  "Yemen",
+  "Yibuti",
+  "Zambia",
+  "Zimbabue",
+]
+
+const COUNTRIES_WITH_LEVEL3 = [
+  "Perú",
+  "Chile",
+  "Colombia",
+  "México",
+  "Argentina",
+  "Ecuador",
+  "Bolivia",
+  "Venezuela",
+  "Guatemala",
+  "Honduras",
+  "Nicaragua",
+  "Costa Rica",
+  "Panamá",
+  "El Salvador",
+]
+
+function InfoTooltip({ text }: { text: string }) {
+  return (
+    <div className="group relative inline-block">
+      <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+      <div className="invisible group-hover:visible absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-48 rounded-md bg-popover px-3 py-2 text-xs text-popover-foreground shadow-md border z-50">
+        {text}
+        <div className="absolute left-1/2 -translate-x-1/2 top-full border-4 border-transparent border-t-popover" />
+      </div>
+    </div>
+  )
+}
 
 const STEPS = [
   { id: 1, title: "Usuario Master", description: "Información personal", icon: User },
@@ -38,6 +273,7 @@ export default function SignupPage() {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
+  const [showLocalidad, setShowLocalidad] = useState(true)
 
   const [formData, setFormData] = useState<SignupFormData>({
     usuario: {
@@ -54,8 +290,11 @@ export default function SignupPage() {
       ruc: "",
       pais: "",
       tipoEmpresa: [],
+      region: "",
       ciudad: "",
+      localidad: "",
       direccion: "",
+      codigoPostal: "",
     },
     representante: {
       nombre: "",
@@ -70,10 +309,28 @@ export default function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState("")
   const [phoneCountryCode, setPhoneCountryCode] = useState("+51")
   const [repPhoneCountryCode, setRepPhoneCountryCode] = useState("+51")
-  const [availableCities, setAvailableCities] = useState<string[]>([])
 
   const progress = (currentStep / STEPS.length) * 100
   const CurrentStepIcon = STEPS[currentStep - 1].icon
+
+  const checkCountrySubdivisions = async (countryName: string) => {
+    try {
+      if (COUNTRIES_WITH_LEVEL3.includes(countryName)) {
+        setShowLocalidad(true)
+      } else {
+        setShowLocalidad(false)
+      }
+    } catch (error) {
+      console.error("Error checking country subdivisions:", error)
+      setShowLocalidad(true)
+    }
+  }
+
+  useEffect(() => {
+    if (formData.empresa.pais) {
+      checkCountrySubdivisions(formData.empresa.pais)
+    }
+  }, [formData.empresa.pais])
 
   const isStep1Valid = () => {
     const { nombreCompleto, documento, nacionalidad, contacto, cargo, correo, password } = formData.usuario
@@ -389,60 +646,104 @@ export default function SignupPage() {
                       ))}
                     </div>
                   </div>
-                  <div className="space-y-2">
+
+                  <div className="space-y-2 md:col-span-2">
                     <Label htmlFor="pais">País *</Label>
                     <Select
                       value={formData.empresa.pais}
                       onValueChange={(value) => {
-                        const cities = getCitiesByCountry(value)
-                        setAvailableCities(cities)
                         setFormData({
                           ...formData,
-                          empresa: { ...formData.empresa, pais: value, ciudad: "" },
+                          empresa: { ...formData.empresa, pais: value },
                         })
                       }}
                     >
                       <SelectTrigger id="pais" className="w-full">
-                        <SelectValue placeholder="Seleccionar" />
+                        <SelectValue placeholder="Seleccionar país" />
                       </SelectTrigger>
                       <SelectContent>
-                        {COUNTRIES_AMERICAS.map((country) => (
-                          <SelectItem key={country.name} value={country.name}>
-                            {country.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="ciudad">Ciudad *</Label>
-                    <Select
-                      value={formData.empresa.ciudad}
-                      onValueChange={(value) =>
-                        setFormData({
-                          ...formData,
-                          empresa: { ...formData.empresa, ciudad: value },
-                        })
-                      }
-                      disabled={!formData.empresa.pais || availableCities.length === 0}
-                    >
-                      <SelectTrigger id="ciudad" className="w-full">
-                        <SelectValue
-                          placeholder={formData.empresa.pais ? "Seleccionar ciudad" : "Primero selecciona un país"}
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableCities.map((city) => (
-                          <SelectItem key={city} value={city}>
-                            {city}
+                        {ALL_COUNTRIES.map((country) => (
+                          <SelectItem key={country} value={country}>
+                            {country}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
 
+                  <div className="space-y-2">
+                    <Label htmlFor="region" className="flex items-center gap-2">
+                      Región / Estado *
+                      <InfoTooltip text="Región, provincia, departamento o estado" />
+                    </Label>
+                    <Input
+                      id="region"
+                      value={formData.empresa.region}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          empresa: { ...formData.empresa, region: e.target.value },
+                        })
+                      }
+                      placeholder="Ingrese región o estado"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="ciudad">Ciudad *</Label>
+                    <Input
+                      id="ciudad"
+                      value={formData.empresa.ciudad}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          empresa: { ...formData.empresa, ciudad: e.target.value },
+                        })
+                      }
+                      placeholder="Ingrese ciudad"
+                      required
+                    />
+                  </div>
+
+                  {showLocalidad && (
+                    <div className="space-y-2">
+                      <Label htmlFor="localidad" className="flex items-center gap-2">
+                        Localidad
+                        <InfoTooltip text="Distrito, municipio o comuna" />
+                      </Label>
+                      <Input
+                        id="localidad"
+                        value={formData.empresa.localidad}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            empresa: { ...formData.empresa, localidad: e.target.value },
+                          })
+                        }
+                        placeholder="Ingrese localidad"
+                      />
+                    </div>
+                  )}
+
+                  <div className={`space-y-2 ${showLocalidad ? "" : "md:col-span-1"}`}>
+                    <Label htmlFor="codigoPostal">Código Postal *</Label>
+                    <Input
+                      id="codigoPostal"
+                      value={formData.empresa.codigoPostal}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          empresa: { ...formData.empresa, codigoPostal: e.target.value },
+                        })
+                      }
+                      placeholder="Ingrese código postal"
+                      required
+                    />
+                  </div>
+
                   <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="direccion">Dirección *</Label>
+                    <Label htmlFor="direccion">Dirección Principal *</Label>
                     <Input
                       id="direccion"
                       value={formData.empresa.direccion}
@@ -452,6 +753,7 @@ export default function SignupPage() {
                           empresa: { ...formData.empresa, direccion: e.target.value },
                         })
                       }
+                      placeholder="Calle, número, edificio, etc."
                       required
                     />
                   </div>
@@ -658,8 +960,6 @@ export default function SignupPage() {
             {/* Step 5: Confirmación */}
             {currentStep === 5 && (
               <div className="space-y-6">
-                
-
                 <div className="space-y-4">
                   <div>
                     <h4 className="mb-2 font-semibold">Usuario Master</h4>
@@ -704,7 +1004,18 @@ export default function SignupPage() {
                         <span className="text-muted-foreground">País:</span> {formData.empresa.pais}
                       </p>
                       <p>
+                        <span className="text-muted-foreground">Región/Estado:</span> {formData.empresa.region}
+                      </p>
+                      <p>
                         <span className="text-muted-foreground">Ciudad:</span> {formData.empresa.ciudad}
+                      </p>
+                      {showLocalidad && formData.empresa.localidad && (
+                        <p>
+                          <span className="text-muted-foreground">Localidad:</span> {formData.empresa.localidad}
+                        </p>
+                      )}
+                      <p>
+                        <span className="text-muted-foreground">Código Postal:</span> {formData.empresa.codigoPostal}
                       </p>
                       <p>
                         <span className="text-muted-foreground">Dirección:</span> {formData.empresa.direccion}

@@ -1,8 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import type React from "react"
+
+import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { FileText, Package, EarthIcon, LucideContainer as LucideContainerIcon, Plus, X } from "lucide-react"
+import { FileText, Package, EarthIcon, LucideContainer as LucideContainerIcon, Plus, X, Upload } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -41,6 +43,13 @@ interface Product {
 export default function NuevaOrdenPage() {
   const router = useRouter()
   const [tipoEnvio, setTipoEnvio] = useState<string>("")
+
+  const [logisticsMode, setLogisticsMode] = useState<"none" | "document" | "manual">("none")
+
+  const fileInputRefMaritimo = useRef<HTMLInputElement>(null)
+  const fileInputRefAereo = useRef<HTMLInputElement>(null)
+  const fileInputRefTerrestre = useRef<HTMLInputElement>(null)
+
   const [products, setProducts] = useState<Product[]>([
     {
       id: "1",
@@ -193,8 +202,22 @@ export default function NuevaOrdenPage() {
   }
 
   const handleSaveDraft = () => {
-    console.log("[v0] Saving draft...")
-    router.push("/ordenes")
+    const draftOrder = {
+      tipoEnvio,
+      products,
+      logisticsMode,
+      timestamp: new Date().toISOString(),
+      status: "borrador",
+    }
+
+    // Save to localStorage for now (until backend is implemented)
+    const existingDrafts = JSON.parse(localStorage.getItem("orderDrafts") || "[]")
+    existingDrafts.push(draftOrder)
+    localStorage.setItem("orderDrafts", JSON.stringify(existingDrafts))
+
+    // Show success message (you can add a toast notification here)
+    alert("Borrador guardado exitosamente")
+    console.log("[v0] Draft saved:", draftOrder)
   }
 
   const handleCreateOrder = () => {
@@ -229,6 +252,26 @@ export default function NuevaOrdenPage() {
       ]
     }
     return []
+  }
+
+  const handleLoadDocument = (type: "maritimo" | "aereo" | "terrestre") => {
+    setLogisticsMode("document")
+    if (type === "maritimo" && fileInputRefMaritimo.current) {
+      fileInputRefMaritimo.current.click()
+    } else if (type === "aereo" && fileInputRefAereo.current) {
+      fileInputRefAereo.current.click()
+    } else if (type === "terrestre" && fileInputRefTerrestre.current) {
+      fileInputRefTerrestre.current.click()
+    }
+  }
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      console.log("[v0] File selected:", file.name)
+      // TODO: Implement document parsing logic here
+      // For now, just log the file
+    }
   }
 
   return (
@@ -493,6 +536,8 @@ export default function NuevaOrdenPage() {
                 </div>
               </div>
 
+              <div className="border-t border-gray-200" />
+
               {/* Row 3: User inputs */}
               <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                 <div className="space-y-2">
@@ -680,191 +725,547 @@ export default function NuevaOrdenPage() {
       </Card>
 
       {/* Logística Internacional Section */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <EarthIcon className="h-5 w-5 text-black" />
-            Logística Internacional
-          </CardTitle>
-          <Button variant="outline" size="sm">
-            Cargar Booking
-          </Button>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            <div className="space-y-2">
-              <Label htmlFor="shipping-type">
-                Tipo de Envío <span className="text-red-500">*</span>
-              </Label>
-              <Select>
-                <SelectTrigger id="shipping-type" className="w-full">
-                  <SelectValue placeholder="Seleccionar tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="maritime">Marítimo</SelectItem>
-                  <SelectItem value="air">Aéreo</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="incoterm-logistics">
-                Incoterm <span className="text-red-500">*</span>
-              </Label>
-              <Select>
-                <SelectTrigger id="incoterm-logistics" className="w-full">
-                  <SelectValue placeholder="Seleccionar incoterm" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="fob">FOB (Free On Board)</SelectItem>
-                  <SelectItem value="cif">CIF (Cost, Insurance & Freight)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="payment-condition">
-                Condición de Pago <span className="text-red-500">*</span>
-              </Label>
-              <Select>
-                <SelectTrigger id="payment-condition" className="w-full">
-                  <SelectValue placeholder="Seleccionar condición" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="advance">Pago Anticipado</SelectItem>
-                  <SelectItem value="credit">Crédito</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+      {tipoEnvio && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <EarthIcon className="h-5 w-5 text-black" />
+              Logística Internacional
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Marítimo Section */}
+            {tipoEnvio === "maritimo" && (
+              <div className="space-y-6">
+                <h3 className="font-semibold text-sm">Envío Marítimo</h3>
 
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            <div className="space-y-2">
-              <Label htmlFor="origin-port">
-                Puerto Origen <span className="text-red-500">*</span>
-              </Label>
-              <Input id="origin-port" className="w-full" placeholder="Puerto de origen" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="destination-port">
-                Puerto Destino <span className="text-red-500">*</span>
-              </Label>
-              <Input id="destination-port" className="w-full" placeholder="Puerto de destino" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="bl-place">Lugar Emisión BL</Label>
-              <Input id="bl-place" className="w-full" placeholder="Lugar de emisión del Bill of Lading" />
-            </div>
-          </div>
+                {/* Manual fields */}
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="tipo-carga">
+                      Tipo de Carga <span className="text-red-500">*</span>
+                    </Label>
+                    <Select>
+                      <SelectTrigger id="tipo-carga" className="w-full">
+                        <SelectValue placeholder="Seleccionar tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="fcl">FCL (Full Container Load)</SelectItem>
+                        <SelectItem value="lcl">LCL (Less than Container Load)</SelectItem>
+                        <SelectItem value="break-bulk">Break Bulk</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="tipo-bl">
+                      Tipo de BL <span className="text-red-500">*</span>
+                    </Label>
+                    <Select>
+                      <SelectTrigger id="tipo-bl" className="w-full">
+                        <SelectValue placeholder="Seleccionar tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="original">Original</SelectItem>
+                        <SelectItem value="telex">Telex Release</SelectItem>
+                        <SelectItem value="express">Express Release</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="agente-carga-maritimo">
+                      Agente de Carga <span className="text-red-500">*</span>
+                    </Label>
+                    <Input id="agente-carga-maritimo" className="w-full" placeholder="Nombre del agente de carga" />
+                  </div>
+                </div>
 
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            <div className="space-y-2">
-              <Label htmlFor="special-regime">Régimen Especial</Label>
-              <Select>
-                <SelectTrigger id="special-regime" className="w-full">
-                  <SelectValue placeholder="Seleccionar régimen" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Ninguno</SelectItem>
-                  <SelectItem value="temporary">Temporal</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="inspections">Inspecciones</Label>
-              <Input id="inspections" className="w-full" placeholder="Tipo de inspecciones requeridas" />
-            </div>
-            <div className="space-y-2">{/* Empty cell for grid alignment */}</div>
-          </div>
-        </CardContent>
-      </Card>
+                <input
+                  ref={fileInputRefMaritimo}
+                  type="file"
+                  accept=".pdf,.doc,.docx"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+                <div className="flex gap-3">
+                  <Button
+                    variant={logisticsMode === "document" ? "default" : "outline"}
+                    onClick={() => handleLoadDocument("maritimo")}
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    Cargar Booking
+                  </Button>
+                  <Button
+                    variant={logisticsMode === "manual" ? "default" : "outline"}
+                    onClick={() => setLogisticsMode("manual")}
+                  >
+                    Cambiar a Manual
+                  </Button>
+                </div>
+
+                {/* Automatic fields - appear when document loaded or manual mode */}
+                {logisticsMode !== "none" && (
+                  <>
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="naviera">Naviera</Label>
+                        <Input id="naviera" className="w-full" placeholder="Nombre de la naviera" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="num-booking">N° de Booking</Label>
+                        <Input id="num-booking" className="w-full" placeholder="Número de booking" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="num-viaje">N° de Viaje / Buque</Label>
+                        <Input id="num-viaje" className="w-full" placeholder="Número de viaje o buque" />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="tipo-contenedores">Tipo de Contenedores</Label>
+                        <Select>
+                          <SelectTrigger id="tipo-contenedores" className="w-full">
+                            <SelectValue placeholder="Seleccionar tipo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="20dv">20DV</SelectItem>
+                            <SelectItem value="40hc">40HC</SelectItem>
+                            <SelectItem value="40rf">40RF</SelectItem>
+                            <SelectItem value="break-bulk">Break Bulk</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="cantidad-contenedores">Cantidad de Contenedores</Label>
+                        <Input id="cantidad-contenedores" className="w-full" type="number" placeholder="Cantidad" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="deposito-retiro">Depósito de Retiro</Label>
+                        <Input id="deposito-retiro" className="w-full" placeholder="Nombre del depósito" />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="puerto-origen-maritimo">Puerto de Origen</Label>
+                        <Select>
+                          <SelectTrigger id="puerto-origen-maritimo" className="w-full">
+                            <SelectValue placeholder="Seleccionar puerto" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pecll">Callao (PECLL), Perú</SelectItem>
+                            <SelectItem value="pepio">Paita (PEPIO), Perú</SelectItem>
+                            <SelectItem value="pemol">Matarani (PEMOL), Perú</SelectItem>
+                            <SelectItem value="other">Otro puerto</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="puerto-destino-maritimo">Puerto de Destino</Label>
+                        <Select>
+                          <SelectTrigger id="puerto-destino-maritimo" className="w-full">
+                            <SelectValue placeholder="Seleccionar puerto" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="cndfe">Dafeng (CNDFE), China</SelectItem>
+                            <SelectItem value="cnsha">Shanghai (CNSHA), China</SelectItem>
+                            <SelectItem value="cnytn">Yantian (CNYTN), China</SelectItem>
+                            <SelectItem value="other">Otro puerto</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="etd-maritimo">Fecha Estimada de Embarque (ETD)</Label>
+                        <Input id="etd-maritimo" className="w-full" type="date" />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="eta-maritimo">Fecha Estimada de Arribo (ETA)</Label>
+                        <Input id="eta-maritimo" className="w-full" type="date" />
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Aéreo Section */}
+            {tipoEnvio === "aereo" && (
+              <div className="space-y-6">
+                <h3 className="font-semibold text-sm">Envío Aéreo</h3>
+
+                {/* Manual fields */}
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="tipo-guia">
+                      Tipo de Guía <span className="text-red-500">*</span>
+                    </Label>
+                    <Select>
+                      <SelectTrigger id="tipo-guia" className="w-full">
+                        <SelectValue placeholder="Seleccionar tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="mawb">MAWB (Master Air Waybill)</SelectItem>
+                        <SelectItem value="hawb">HAWB (House Air Waybill)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="tipo-documento-aereo">
+                      Tipo de Documento <span className="text-red-500">*</span>
+                    </Label>
+                    <Select>
+                      <SelectTrigger id="tipo-documento-aereo" className="w-full">
+                        <SelectValue placeholder="Seleccionar tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="awb">Air Waybill</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="agente-carga-aereo">
+                      Agente de Carga <span className="text-red-500">*</span>
+                    </Label>
+                    <Input id="agente-carga-aereo" className="w-full" placeholder="Nombre del agente de carga" />
+                  </div>
+                </div>
+
+                <input
+                  ref={fileInputRefAereo}
+                  type="file"
+                  accept=".pdf,.doc,.docx"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+                <div className="flex gap-3">
+                  <Button
+                    variant={logisticsMode === "document" ? "default" : "outline"}
+                    onClick={() => handleLoadDocument("aereo")}
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    Cargar AWB
+                  </Button>
+                  <Button
+                    variant={logisticsMode === "manual" ? "default" : "outline"}
+                    onClick={() => setLogisticsMode("manual")}
+                  >
+                    Cambiar a Manual
+                  </Button>
+                </div>
+
+                {/* Automatic fields */}
+                {logisticsMode !== "none" && (
+                  <>
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="aerolinea">Aerolínea</Label>
+                        <Input id="aerolinea" className="w-full" placeholder="Nombre de la aerolínea" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="num-awb">N° de Guía Aérea (AWB)</Label>
+                        <Input id="num-awb" className="w-full" placeholder="Número de AWB" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="aeropuerto-origen">Aeropuerto de Origen</Label>
+                        <Input id="aeropuerto-origen" className="w-full" placeholder="Aeropuerto de origen" />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="aeropuerto-destino">Aeropuerto de Destino</Label>
+                        <Input id="aeropuerto-destino" className="w-full" placeholder="Aeropuerto de destino" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="etd-aereo">Fecha de Vuelo (ETD)</Label>
+                        <Input id="etd-aereo" className="w-full" type="date" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="eta-aereo">Fecha Estimada de Llegada (ETA)</Label>
+                        <Input id="eta-aereo" className="w-full" type="date" />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="cantidad-bultos">Cantidad de Bultos</Label>
+                        <Input id="cantidad-bultos" className="w-full" type="number" placeholder="Cantidad" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="peso-total-aereo">Peso Total (Kg)</Label>
+                        <Input id="peso-total-aereo" className="w-full" type="number" placeholder="Peso total" />
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Terrestre Section */}
+            {tipoEnvio === "terrestre" && (
+              <div className="space-y-6">
+                <h3 className="font-semibold text-sm">Envío Terrestre</h3>
+
+                {/* Manual fields */}
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="tipo-documento-terrestre">
+                      Tipo de Documento <span className="text-red-500">*</span>
+                    </Label>
+                    <Select>
+                      <SelectTrigger id="tipo-documento-terrestre" className="w-full">
+                        <SelectValue placeholder="Seleccionar tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="carta-porte">Carta Porte</SelectItem>
+                        <SelectItem value="cmr">CMR</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="tipo-unidad">
+                      Tipo de Unidad <span className="text-red-500">*</span>
+                    </Label>
+                    <Select>
+                      <SelectTrigger id="tipo-unidad" className="w-full">
+                        <SelectValue placeholder="Seleccionar tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="camion">Camión</SelectItem>
+                        <SelectItem value="trailer">Tráiler</SelectItem>
+                        <SelectItem value="plataforma">Plataforma</SelectItem>
+                        <SelectItem value="otro">Otro</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="cantidad-unidades">
+                      Cantidad de Unidades <span className="text-red-500">*</span>
+                    </Label>
+                    <Input id="cantidad-unidades" className="w-full" type="number" placeholder="Cantidad" />
+                  </div>
+                </div>
+
+                <input
+                  ref={fileInputRefTerrestre}
+                  type="file"
+                  accept=".pdf,.doc,.docx"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+                <div className="flex gap-3">
+                  <Button
+                    variant={logisticsMode === "document" ? "default" : "outline"}
+                    onClick={() => handleLoadDocument("terrestre")}
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    Cargar Carta Porte
+                  </Button>
+                  <Button
+                    variant={logisticsMode === "manual" ? "default" : "outline"}
+                    onClick={() => setLogisticsMode("manual")}
+                  >
+                    Cambiar a Manual
+                  </Button>
+                </div>
+
+                {/* Automatic fields */}
+                {logisticsMode !== "none" && (
+                  <>
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="transportista">Transportista</Label>
+                        <Input id="transportista" className="w-full" placeholder="Nombre del transportista" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="num-documento-terrestre">N° de Carta Porte / CMR</Label>
+                        <Input id="num-documento-terrestre" className="w-full" placeholder="Número de documento" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="pais-origen-terrestre">País de Origen</Label>
+                        <Input id="pais-origen-terrestre" className="w-full" placeholder="País de origen" />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="pais-destino-terrestre">País de Destino</Label>
+                        <Input id="pais-destino-terrestre" className="w-full" placeholder="País de destino" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="pais-transito">País de Tránsito</Label>
+                        <Input id="pais-transito" className="w-full" placeholder="País de tránsito (si aplica)" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="etd-terrestre">Fecha de Salida (ETD)</Label>
+                        <Input id="etd-terrestre" className="w-full" type="date" />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="eta-terrestre">Fecha Estimada de Llegada (ETA)</Label>
+                        <Input id="eta-terrestre" className="w-full" type="date" />
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Logística en Origen Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <LucideContainerIcon className="h-5 w-5 text-black" />
-            Logística en Origen
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            <div className="space-y-2">
-              <Label htmlFor="logistics-operator">
-                Operador Logístico <span className="text-red-500">*</span>
-              </Label>
-              <Select>
-                <SelectTrigger id="logistics-operator" className="w-full">
-                  <SelectValue placeholder="Seleccionar operador" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ocean">Ocean Freight Solutions</SelectItem>
-                  <SelectItem value="other">Otro operador</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="customs-agency">
-                Agencia de Aduana <span className="text-red-500">*</span>
-              </Label>
-              <Select>
-                <SelectTrigger id="customs-agency" className="w-full">
-                  <SelectValue placeholder="Seleccionar agencia" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="customs">Customs Brokerage Inc.</SelectItem>
-                  <SelectItem value="other">Otra agencia</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="warehouse">Almacén</Label>
-              <Select>
-                <SelectTrigger id="warehouse" className="w-full">
-                  <SelectValue placeholder="Seleccionar almacén" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="lima">Almacén Central Lima</SelectItem>
-                  <SelectItem value="other">Otro almacén</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+      {tipoEnvio && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <LucideContainerIcon className="h-5 w-5 text-black" />
+              Logística en Origen
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {tipoEnvio === "maritimo" ? (
+              <>
+                {/* Show all fields for Marítimo */}
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="logistics-operator">
+                      Operador Logístico <span className="text-red-500">*</span>
+                    </Label>
+                    <Select>
+                      <SelectTrigger id="logistics-operator" className="w-full">
+                        <SelectValue placeholder="Seleccionar operador" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ocean">Ocean Freight Solutions</SelectItem>
+                        <SelectItem value="other">Otro operador</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="customs-agency">
+                      Agencia de Aduana <span className="text-red-500">*</span>
+                    </Label>
+                    <Select>
+                      <SelectTrigger id="customs-agency" className="w-full">
+                        <SelectValue placeholder="Seleccionar agencia" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="customs">Customs Brokerage Inc.</SelectItem>
+                        <SelectItem value="other">Otra agencia</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="warehouse">Almacén</Label>
+                    <Select>
+                      <SelectTrigger id="warehouse" className="w-full">
+                        <SelectValue placeholder="Seleccionar planta" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="lima">Almacén Central Lima</SelectItem>
+                        <SelectItem value="other">Otro almacén</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
 
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            <div className="space-y-2">
-              <Label htmlFor="filling-date">
-                Fecha y hora para llenado <span className="text-red-500">*</span>
-              </Label>
-              <Input id="filling-date" className="w-full" type="datetime-local" placeholder="MM/DD/AAAA hh:mm aa" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="dispatch-mode">
-                Modalidad de despacho <span className="text-red-500">*</span>
-              </Label>
-              <Select>
-                <SelectTrigger id="dispatch-mode" className="w-full">
-                  <SelectValue placeholder="Seleccionar modalidad" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="direct">Directo</SelectItem>
-                  <SelectItem value="indirect">Indirecto</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="entry-terminal">Terminal de Ingreso (Puerto o DT)</Label>
-              <Select>
-                <SelectTrigger id="entry-terminal" className="w-full">
-                  <SelectValue placeholder="Seleccionar terminal" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="callao">Terminal Marítimo Callao</SelectItem>
-                  <SelectItem value="other">Otro terminal</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="filling-date">
+                      Fecha y hora para llenado <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="filling-date"
+                      className="w-full"
+                      type="datetime-local"
+                      placeholder="MM/DD/AAAA hh:mm aa"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="dispatch-mode">
+                      Modalidad de despacho <span className="text-red-500">*</span>
+                    </Label>
+                    <Select>
+                      <SelectTrigger id="dispatch-mode" className="w-full">
+                        <SelectValue placeholder="Seleccionar modalidad" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="direct">Directo</SelectItem>
+                        <SelectItem value="indirect">Indirecto</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="entry-terminal">Terminal de Ingreso (Puerto o DT)</Label>
+                    <Select>
+                      <SelectTrigger id="entry-terminal" className="w-full">
+                        <SelectValue placeholder="Seleccionar terminal" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="callao">Terminal Marítimo Callao</SelectItem>
+                        <SelectItem value="other">Otro terminal</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </>
+            ) : tipoEnvio === "aereo" || tipoEnvio === "terrestre" ? (
+              <>
+                {/* Show limited fields for Aéreo/Terrestre */}
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="customs-agency">
+                      Agencia de Aduana <span className="text-red-500">*</span>
+                    </Label>
+                    <Select>
+                      <SelectTrigger id="customs-agency" className="w-full">
+                        <SelectValue placeholder="Seleccionar agencia" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="customs">Customs Brokerage Inc.</SelectItem>
+                        <SelectItem value="other">Otra agencia</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="warehouse">Almacén</Label>
+                    <Select>
+                      <SelectTrigger id="warehouse" className="w-full">
+                        <SelectValue placeholder="Seleccionar planta" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="lima">Almacén Central Lima</SelectItem>
+                        <SelectItem value="other">Otro almacén</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="filling-date">
+                      Fecha y hora <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="filling-date"
+                      className="w-full"
+                      type="datetime-local"
+                      placeholder="MM/DD/AAAA hh:mm aa"
+                    />
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                Seleccione un tipo de envío en "Datos Base" para continuar
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Action Buttons */}
       <div className="flex justify-end gap-3">

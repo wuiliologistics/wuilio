@@ -11,6 +11,7 @@ export function Header() {
   const isNuevaOrden = pathname === "/ordenes/nueva"
   const isClientes = pathname === "/clientes"
   const isProductos = pathname === "/productos"
+  const isLogistica = pathname === "/logistica"
   const isConfiguraciones = pathname === "/configuraciones"
   const isOrderDetail = pathname.startsWith("/ordenes/ver/")
 
@@ -22,6 +23,7 @@ export function Header() {
   if (isNuevaOrden) title = "Nueva Orden"
   if (isClientes) title = "Clientes"
   if (isProductos) title = "Productos"
+  if (isLogistica) title = "Logística"
 
   return (
     <header className="border-border border-none bg-slate-50 px-6 mx-0 gap-0 border-b border-r-0 my-0">
@@ -39,7 +41,7 @@ export function Header() {
           <p className="text-sm text-muted-foreground pl-11">Completa todos los campos para crear una nueva orden.</p>
         )}
 
-        {!isNuevaOrden && !isClientes && !isProductos && (
+        {!isNuevaOrden && !isClientes && !isProductos && !isLogistica && (
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="h-5 w-5" />
@@ -75,6 +77,20 @@ export function Header() {
               className="bg-black hover:bg-gray-800"
             >
               + Nuevo Producto
+            </Button>
+          </div>
+        )}
+
+        {isLogistica && (
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={() => {
+                const event = new CustomEvent("openProveedorModal")
+                window.dispatchEvent(event)
+              }}
+              className="bg-black hover:bg-gray-800"
+            >
+              + Nuevo Proveedor
             </Button>
           </div>
         )}

@@ -115,7 +115,7 @@ export function Sidebar() {
               {isCollapsed ? (
                 <Image src="/wuilio-icon.png" alt="Expand" width={20} height={20} className="object-contain size-12" />
               ) : (
-                <PanelLeft className="h-4 w-4" />
+                <PanelLeft className="h-4 w-4" strokeWidth={1.5} />
               )}
             </Button>
           </div>
@@ -144,7 +144,7 @@ export function Sidebar() {
                       className={cn(comp.status === "pending" && "text-muted-foreground opacity-60")}
                     >
                       <div className="flex items-center">
-                        {comp.status === "pending" && <Clock className="mr-2 h-4 w-4" />}
+                        {comp.status === "pending" && <Clock className="mr-2 h-4 w-4" strokeWidth={1.5} />}
                         {comp.name}
                       </div>
                     </SelectItem>
@@ -152,7 +152,7 @@ export function Sidebar() {
                   <SelectSeparator />
                   <SelectItem value="register-new" className="text-gray-900 font-medium">
                     <div className="flex items-center">
-                      <Plus className="mr-2 h-4 w-4" />
+                      <Plus className="mr-2 h-4 w-4" strokeWidth={1.5} />
                       Registrar Empresa
                     </div>
                   </SelectItem>
@@ -190,7 +190,7 @@ export function Sidebar() {
                                   isCollapsed && "justify-center px-2",
                                 )}
                               >
-                                <Icon className="shrink-0 size-5" />
+                                <Icon className="shrink-0 size-5" strokeWidth={1.5} />
                                 {!isCollapsed && item.name}
                               </Link>
                             </TooltipTrigger>
@@ -252,11 +252,11 @@ export function Sidebar() {
                     }}
                     className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-foreground transition-colors hover:bg-accent"
                   >
-                    <Settings className="h-4 w-4" />
+                    <Settings className="h-4 w-4" strokeWidth={1.5} />
                     <span>Configuraciones</span>
                   </button>
                   <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-foreground transition-colors hover:bg-accent">
-                    <LogOut className="h-4 w-4" />
+                    <LogOut className="h-4 w-4" strokeWidth={1.5} />
                     <span>Cerrar sesión</span>
                   </button>
                 </div>

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Separator } from "@/components/ui/separator"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Info } from "lucide-react"
 import type { Producto } from "@/types/producto"
@@ -66,379 +67,421 @@ export function ProductoFormModal({ open, onClose, onSave, producto }: ProductoF
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{producto ? "Editar Producto" : "Nuevo Producto"}</DialogTitle>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-6">
+        <DialogHeader className="pb-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-gray-800 to-gray-900">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="text-white"
+              >
+                <path d="M16.5 9.4 7.55 4.24" />
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                <polyline points="3.29 7 12 12 20.71 7" />
+                <line x1="12" x2="12" y1="22" y2="12" />
+              </svg>
+            </div>
+            <div>
+              <DialogTitle className="text-xl">{producto ? "Editar Producto" : "Nuevo Producto"}</DialogTitle>
+              <p className="text-sm text-muted-foreground">
+                {producto ? "Actualiza la información del producto" : "Completa la información del producto"}
+              </p>
+            </div>
+          </div>
         </DialogHeader>
 
         <TooltipProvider>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* 1. Código de Producto */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-1.5">
-                <Label htmlFor="codigo_producto">Código de Producto</Label>
-                <Tooltip>
-                  <TooltipTrigger type="button">
-                    <Info className="h-4 w-4 text-muted-foreground" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Ejemplo: ID1012930</p>
-                  </TooltipContent>
-                </Tooltip>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Información Básica */}
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">Información Básica</h3>
+                <Separator className="mt-2" />
               </div>
-              <Input
-                id="codigo_producto"
-                value={formData.codigo_producto}
-                onChange={(e) => handleChange("codigo_producto", e.target.value)}
-                required
-              />
-            </div>
-
-            {/* 2. Descripción Comercial */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-1.5">
-                <Label htmlFor="descripcion_comercial">Descripción Comercial</Label>
-                <Tooltip>
-                  <TooltipTrigger type="button">
-                    <Info className="h-4 w-4 text-muted-foreground" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Ejemplo: PORCELAIN TILES</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <Input
-                id="descripcion_comercial"
-                value={formData.descripcion_comercial}
-                onChange={(e) => handleChange("descripcion_comercial", e.target.value)}
-                required
-              />
-            </div>
-
-            {/* 3. Partida arancelaria */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-1.5">
-                <Label htmlFor="partida_arancelaria">Partida arancelaria</Label>
-                <Tooltip>
-                  <TooltipTrigger type="button">
-                    <Info className="h-4 w-4 text-muted-foreground" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Ejemplo: 00819221</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <Input
-                id="partida_arancelaria"
-                value={formData.partida_arancelaria}
-                onChange={(e) => handleChange("partida_arancelaria", e.target.value)}
-                required
-              />
-            </div>
-
-            {/* 4. Formato Presentación */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-1.5">
-                <Label htmlFor="formato_presentacion">Unidad Comercial</Label>
-                <Tooltip>
-                  <TooltipTrigger type="button">
-                    <Info className="h-4 w-4 text-muted-foreground" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Ejemplo: Caja de 4 piezas (60×60 cm)</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <Input
-                id="formato_presentacion"
-                value={formData.formato_presentacion}
-                onChange={(e) => handleChange("formato_presentacion", e.target.value)}
-                required
-              />
-            </div>
-
-            {/* 5. Unidades Físicas */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-1.5">
-                <Label>Unidades Físicas</Label>
-                <Tooltip>
-                  <TooltipTrigger type="button">
-                    <Info className="h-4 w-4 text-muted-foreground" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Ejemplo: 1.66 m²</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <div className="grid grid-cols-[1fr_auto] gap-2">
+              {/* 1. Código de Producto */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-1.5">
+                  <Label htmlFor="codigo_producto">Código de Producto</Label>
+                  <Tooltip>
+                    <TooltipTrigger type="button">
+                      <Info className="h-4 w-4 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Ejemplo: ID1012930</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
                 <Input
+                  id="codigo_producto"
+                  value={formData.codigo_producto}
+                  onChange={(e) => handleChange("codigo_producto", e.target.value)}
+                  required
+                />
+              </div>
+
+              {/* 2. Descripción Comercial */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-1.5">
+                  <Label htmlFor="descripcion_comercial">Descripción Comercial</Label>
+                  <Tooltip>
+                    <TooltipTrigger type="button">
+                      <Info className="h-4 w-4 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Ejemplo: PORCELAIN TILES</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <Input
+                  id="descripcion_comercial"
+                  value={formData.descripcion_comercial}
+                  onChange={(e) => handleChange("descripcion_comercial", e.target.value)}
+                  required
+                />
+              </div>
+
+              {/* 3. Partida arancelaria */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-1.5">
+                  <Label htmlFor="partida_arancelaria">Partida arancelaria</Label>
+                  <Tooltip>
+                    <TooltipTrigger type="button">
+                      <Info className="h-4 w-4 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Ejemplo: 00819221</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <Input
+                  id="partida_arancelaria"
+                  value={formData.partida_arancelaria}
+                  onChange={(e) => handleChange("partida_arancelaria", e.target.value)}
+                  required
+                />
+              </div>
+
+              {/* 4. Formato Presentación */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-1.5">
+                  <Label htmlFor="formato_presentacion">Unidad Comercial</Label>
+                  <Tooltip>
+                    <TooltipTrigger type="button">
+                      <Info className="h-4 w-4 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Ejemplo: Caja de 4 piezas (60×60 cm)</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <Input
+                  id="formato_presentacion"
+                  value={formData.formato_presentacion}
+                  onChange={(e) => handleChange("formato_presentacion", e.target.value)}
+                  required
+                />
+              </div>
+
+              {/* 5. Unidades Físicas */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-1.5">
+                  <Label>Unidades Físicas</Label>
+                  <Tooltip>
+                    <TooltipTrigger type="button">
+                      <Info className="h-4 w-4 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Ejemplo: 1.66 m²</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <div className="grid grid-cols-[1fr_auto] gap-2">
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={
+                      isNaN(formData.unidades_comerciales_valor as number) ? "" : formData.unidades_comerciales_valor
+                    }
+                    onChange={(e) =>
+                      handleChange(
+                        "unidades_comerciales_valor",
+                        e.target.value === "" ? 0 : Number.parseFloat(e.target.value),
+                      )
+                    }
+                    required
+                  />
+                  <Select value={formData.unidad} onValueChange={(value) => handleChange("unidad", value)}>
+                    <SelectTrigger className="w-[120px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {unidadOptions.map((option) => (
+                        <SelectItem key={option} value={option}>
+                          {option}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* 6. País de Origen */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-1.5">
+                  <Label htmlFor="pais_origen">País de Origen</Label>
+                  <Tooltip>
+                    <TooltipTrigger type="button">
+                      <Info className="h-4 w-4 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Ejemplo: Peru</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <Input
+                  id="pais_origen"
+                  value={formData.pais_origen}
+                  onChange={(e) => handleChange("pais_origen", e.target.value)}
+                  required
+                />
+              </div>
+
+              {/* 7. Precio FOB (USD) */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-1.5">
+                  <Label htmlFor="precio_fob_usd">Precio FOB (USD)</Label>
+                  <Tooltip>
+                    <TooltipTrigger type="button">
+                      <Info className="h-4 w-4 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Ejemplo: 12.5</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <Input
+                  id="precio_fob_usd"
                   type="number"
                   step="0.01"
+                  value={isNaN(formData.precio_fob_usd as number) ? "" : formData.precio_fob_usd}
+                  onChange={(e) =>
+                    handleChange("precio_fob_usd", e.target.value === "" ? 0 : Number.parseFloat(e.target.value))
+                  }
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Empaque y Dimensiones */}
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">Empaque y Dimensiones</h3>
+                <Separator className="mt-2" />
+              </div>
+
+              {/* 8. Empaque base */}
+              <div className="space-y-2">
+                <Label htmlFor="empaque_base">Empaque base</Label>
+                <Select value={formData.empaque_base} onValueChange={(value) => handleChange("empaque_base", value)}>
+                  <SelectTrigger id="empaque_base">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {empaqueBaseOptions.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* 9. Peso neto y Peso bruto */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1.5">
+                    <Label htmlFor="peso_neto_kg">Peso neto (Kg)</Label>
+                    <Tooltip>
+                      <TooltipTrigger type="button">
+                        <Info className="h-4 w-4 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Ejemplo: 25</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  <Input
+                    id="peso_neto_kg"
+                    type="number"
+                    step="0.01"
+                    value={isNaN(formData.peso_neto_kg as number) ? "" : formData.peso_neto_kg}
+                    onChange={(e) =>
+                      handleChange("peso_neto_kg", e.target.value === "" ? 0 : Number.parseFloat(e.target.value))
+                    }
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1.5">
+                    <Label htmlFor="peso_bruto_kg">Peso bruto (Kg)</Label>
+                    <Tooltip>
+                      <TooltipTrigger type="button">
+                        <Info className="h-4 w-4 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Ejemplo: 26</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  <Input
+                    id="peso_bruto_kg"
+                    type="number"
+                    step="0.01"
+                    value={isNaN(formData.peso_bruto_kg as number) ? "" : formData.peso_bruto_kg}
+                    onChange={(e) =>
+                      handleChange("peso_bruto_kg", e.target.value === "" ? 0 : Number.parseFloat(e.target.value))
+                    }
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* 10. Dimensiones de unidad base (cm) */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-1.5">
+                  <Label>Dimensiones de unidad base (cm)</Label>
+                  <Tooltip>
+                    <TooltipTrigger type="button">
+                      <Info className="h-4 w-4 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Ejemplo: L: 60, A: 60, H: 10</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <Input
+                    placeholder="L"
+                    value={formData.dimensiones_cm?.split("x")[0]?.trim() || ""}
+                    onChange={(e) => {
+                      const parts = formData.dimensiones_cm?.split("x") || ["", "", ""]
+                      parts[0] = e.target.value
+                      handleChange("dimensiones_cm", parts.join(" x "))
+                    }}
+                    required
+                  />
+                  <Input
+                    placeholder="A"
+                    value={formData.dimensiones_cm?.split("x")[1]?.trim() || ""}
+                    onChange={(e) => {
+                      const parts = formData.dimensiones_cm?.split("x") || ["", "", ""]
+                      parts[1] = e.target.value
+                      handleChange("dimensiones_cm", parts.join(" x "))
+                    }}
+                    required
+                  />
+                  <Input
+                    placeholder="H"
+                    value={formData.dimensiones_cm?.split("x")[2]?.trim() || ""}
+                    onChange={(e) => {
+                      const parts = formData.dimensiones_cm?.split("x") || ["", "", ""]
+                      parts[2] = e.target.value
+                      handleChange("dimensiones_cm", parts.join(" x "))
+                    }}
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* 11. Empaque Secundario */}
+              <div className="space-y-2">
+                <Label>Empaque Final</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Select
+                    value={formData.empaque_secundario}
+                    onValueChange={(value) => handleChange("empaque_secundario", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {empaqueSecundarioOptions.map((option) => (
+                        <SelectItem key={option} value={option}>
+                          {option}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select
+                    value={formData.unidad_empaque_secundario}
+                    onValueChange={(value) => handleChange("unidad_empaque_secundario", value)}
+                    disabled={formData.empaque_secundario !== "Si"}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {unidadEmpaqueSecundarioOptions.map((option) => (
+                        <SelectItem key={option} value={option}>
+                          {option}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* 12. Cantidad máxima / Empaque secundario */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-1.5">
+                  <Label htmlFor="cantidad_maxima_empaque_secundario">
+                    Cantidad máxima de empaque base por empaque secundario
+                  </Label>
+                  <Tooltip>
+                    <TooltipTrigger type="button">
+                      <Info className="h-4 w-4 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Ejemplo: 200</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <Input
+                  id="cantidad_maxima_empaque_secundario"
+                  type="number"
                   value={
-                    isNaN(formData.unidades_comerciales_valor as number) ? "" : formData.unidades_comerciales_valor
+                    isNaN(formData.cantidad_maxima_empaque_secundario as number)
+                      ? ""
+                      : formData.cantidad_maxima_empaque_secundario
                   }
                   onChange={(e) =>
                     handleChange(
-                      "unidades_comerciales_valor",
-                      e.target.value === "" ? 0 : Number.parseFloat(e.target.value),
+                      "cantidad_maxima_empaque_secundario",
+                      e.target.value === "" ? 0 : Number.parseInt(e.target.value),
                     )
                   }
-                  required
-                />
-                <Select value={formData.unidad} onValueChange={(value) => handleChange("unidad", value)}>
-                  <SelectTrigger className="w-[120px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {unidadOptions.map((option) => (
-                      <SelectItem key={option} value={option}>
-                        {option}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* 6. País de Origen */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-1.5">
-                <Label htmlFor="pais_origen">País de Origen</Label>
-                <Tooltip>
-                  <TooltipTrigger type="button">
-                    <Info className="h-4 w-4 text-muted-foreground" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Ejemplo: Peru</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <Input
-                id="pais_origen"
-                value={formData.pais_origen}
-                onChange={(e) => handleChange("pais_origen", e.target.value)}
-                required
-              />
-            </div>
-
-            {/* 7. Precio FOB (USD) */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-1.5">
-                <Label htmlFor="precio_fob_usd">Precio FOB (USD)</Label>
-                <Tooltip>
-                  <TooltipTrigger type="button">
-                    <Info className="h-4 w-4 text-muted-foreground" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Ejemplo: 12.5</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <Input
-                id="precio_fob_usd"
-                type="number"
-                step="0.01"
-                value={isNaN(formData.precio_fob_usd as number) ? "" : formData.precio_fob_usd}
-                onChange={(e) =>
-                  handleChange("precio_fob_usd", e.target.value === "" ? 0 : Number.parseFloat(e.target.value))
-                }
-                required
-              />
-            </div>
-
-            {/* 8. Empaque base */}
-            <div className="space-y-2">
-              <Label htmlFor="empaque_base">Empaque base</Label>
-              <Select value={formData.empaque_base} onValueChange={(value) => handleChange("empaque_base", value)}>
-                <SelectTrigger id="empaque_base">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {empaqueBaseOptions.map((option) => (
-                    <SelectItem key={option} value={option}>
-                      {option}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* 9. Peso neto y Peso bruto */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <div className="flex items-center gap-1.5">
-                  <Label htmlFor="peso_neto_kg">Peso neto (Kg)</Label>
-                  <Tooltip>
-                    <TooltipTrigger type="button">
-                      <Info className="h-4 w-4 text-muted-foreground" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Ejemplo: 25</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-                <Input
-                  id="peso_neto_kg"
-                  type="number"
-                  step="0.01"
-                  value={isNaN(formData.peso_neto_kg as number) ? "" : formData.peso_neto_kg}
-                  onChange={(e) =>
-                    handleChange("peso_neto_kg", e.target.value === "" ? 0 : Number.parseFloat(e.target.value))
-                  }
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center gap-1.5">
-                  <Label htmlFor="peso_bruto_kg">Peso bruto (Kg)</Label>
-                  <Tooltip>
-                    <TooltipTrigger type="button">
-                      <Info className="h-4 w-4 text-muted-foreground" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Ejemplo: 26</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-                <Input
-                  id="peso_bruto_kg"
-                  type="number"
-                  step="0.01"
-                  value={isNaN(formData.peso_bruto_kg as number) ? "" : formData.peso_bruto_kg}
-                  onChange={(e) =>
-                    handleChange("peso_bruto_kg", e.target.value === "" ? 0 : Number.parseFloat(e.target.value))
-                  }
-                  required
-                />
-              </div>
-            </div>
-
-            {/* 10. Dimensiones de unidad base (cm) */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-1.5">
-                <Label>Dimensiones de unidad base (cm)</Label>
-                <Tooltip>
-                  <TooltipTrigger type="button">
-                    <Info className="h-4 w-4 text-muted-foreground" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Ejemplo: L: 60, A: 60, H: 10</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                <Input
-                  placeholder="L"
-                  value={formData.dimensiones_cm?.split("x")[0]?.trim() || ""}
-                  onChange={(e) => {
-                    const parts = formData.dimensiones_cm?.split("x") || ["", "", ""]
-                    parts[0] = e.target.value
-                    handleChange("dimensiones_cm", parts.join(" x "))
-                  }}
-                  required
-                />
-                <Input
-                  placeholder="A"
-                  value={formData.dimensiones_cm?.split("x")[1]?.trim() || ""}
-                  onChange={(e) => {
-                    const parts = formData.dimensiones_cm?.split("x") || ["", "", ""]
-                    parts[1] = e.target.value
-                    handleChange("dimensiones_cm", parts.join(" x "))
-                  }}
-                  required
-                />
-                <Input
-                  placeholder="H"
-                  value={formData.dimensiones_cm?.split("x")[2]?.trim() || ""}
-                  onChange={(e) => {
-                    const parts = formData.dimensiones_cm?.split("x") || ["", "", ""]
-                    parts[2] = e.target.value
-                    handleChange("dimensiones_cm", parts.join(" x "))
-                  }}
-                  required
-                />
-              </div>
-            </div>
-
-            {/* 11. Empaque Secundario */}
-            <div className="space-y-2">
-              <Label>Empaque Final</Label>
-              <div className="grid grid-cols-2 gap-2">
-                <Select
-                  value={formData.empaque_secundario}
-                  onValueChange={(value) => handleChange("empaque_secundario", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {empaqueSecundarioOptions.map((option) => (
-                      <SelectItem key={option} value={option}>
-                        {option}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select
-                  value={formData.unidad_empaque_secundario}
-                  onValueChange={(value) => handleChange("unidad_empaque_secundario", value)}
                   disabled={formData.empaque_secundario !== "Si"}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {unidadEmpaqueSecundarioOptions.map((option) => (
-                      <SelectItem key={option} value={option}>
-                        {option}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  required
+                />
               </div>
-            </div>
-
-            {/* 12. Cantidad máxima / Empaque secundario */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-1.5">
-                <Label htmlFor="cantidad_maxima_empaque_secundario">
-                  Cantidad máxima de empaque base por empaque secundario
-                </Label>
-                <Tooltip>
-                  <TooltipTrigger type="button">
-                    <Info className="h-4 w-4 text-muted-foreground" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Ejemplo: 200</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <Input
-                id="cantidad_maxima_empaque_secundario"
-                type="number"
-                value={
-                  isNaN(formData.cantidad_maxima_empaque_secundario as number)
-                    ? ""
-                    : formData.cantidad_maxima_empaque_secundario
-                }
-                onChange={(e) =>
-                  handleChange(
-                    "cantidad_maxima_empaque_secundario",
-                    e.target.value === "" ? 0 : Number.parseInt(e.target.value),
-                  )
-                }
-                disabled={formData.empaque_secundario !== "Si"}
-                required
-              />
             </div>
 
             {/* Actions */}
-            <div className="flex justify-end gap-3 pt-4 border-t">
+            <Separator />
+            <div className="flex justify-end gap-3">
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancelar
               </Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                {producto ? "Guardar Cambios" : "Crear Producto"}
+              <Button type="submit" className="bg-black hover:bg-gray-900 text-white">
+                {producto ? "Guardar Cambios" : "Guardar"}
               </Button>
             </div>
           </form>
