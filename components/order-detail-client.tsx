@@ -1,23 +1,20 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Ship, FileText, Package, Download, MoreHorizontal } from "lucide-react"
+import { ArrowLeft, FileText, Package, Ship, Container, ChevronDown, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Progress } from "@/components/ui/progress"
-import { Separator } from "@/components/ui/separator"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { OrderDetail } from "@/types/order-detail"
 import { useState } from "react"
+import TrazabilidadTab from "./trazabilidad-tab"
 
 const statusColors = {
   "En Progreso": "bg-green-100 text-green-700 hover:bg-green-100",
   Completado: "bg-blue-100 text-blue-700 hover:bg-blue-100",
-  Pendiente: "bg-red-100 text-red-700 hover:bg-red-100",
+  Creado: "bg-yellow-100 text-yellow-700 hover:bg-yellow-100",
   Programado: "bg-yellow-100 text-yellow-700 hover:bg-yellow-100",
 }
 
@@ -28,9 +25,20 @@ interface OrderDetailClientProps {
 export default function OrderDetailClient({ order }: OrderDetailClientProps) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState("informacion")
+  const [openSections, setOpenSections] = useState({
+    datosBase: true,
+    productos: true,
+    logisticaInternacional: true,
+    logisticaOrigen: true,
+  })
+
+  const toggleSection = (section: keyof typeof openSections) => {
+    setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }))
+  }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 pt-6">
+      {/* Header */}
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => router.back()} className="h-8 w-8">
           <ArrowLeft className="h-4 w-4" />
@@ -41,288 +49,448 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
         </Badge>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full max-w-2xl grid-cols-5">
-          <TabsTrigger value="informacion">Información</TabsTrigger>
-          <TabsTrigger value="trazabilidad">Trazabilidad</TabsTrigger>
-          <TabsTrigger value="documentos">Documentos</TabsTrigger>
-          <TabsTrigger value="historial">Historial</TabsTrigger>
-          <TabsTrigger value="pagos">Pagos</TabsTrigger>
-        </TabsList>
+      {/* Tabs with Export Button */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6 mt-6">
+        <div className="flex items-center justify-between gap-4">
+          <TabsList className="grid w-full max-w-2xl grid-cols-5 gap-0">
+            <TabsTrigger value="informacion">Información</TabsTrigger>
+            <TabsTrigger value="trazabilidad">Trazabilidad</TabsTrigger>
+            <TabsTrigger value="documentos">Documentos</TabsTrigger>
+            <TabsTrigger value="historial">Historial</TabsTrigger>
+            <TabsTrigger value="pagos">Pagos</TabsTrigger>
+          </TabsList>
+          <Button variant="outline" size="sm" className="gap-2 bg-transparent">
+            <Download className="h-4 w-4" />
+            Exportar
+          </Button>
+        </div>
 
-        <TabsContent value="informacion" className="mt-0 space-y-6">
-          <div className="grid gap-6 lg:grid-cols-3">
-            {/* Left Column */}
-            <div className="space-y-6 lg:col-span-2">
-              {/* Progreso del envío */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Ship className="h-5 w-5" />
-                    Progreso del envío
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-start gap-4">
-                    <div className="flex-1 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-2xl font-semibold text-blue-600">{order.progreso}%</p>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm">
-                            <Download className="mr-2 h-4 w-4" />
-                            Export
-                          </Button>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </div>
+        {/* Información Tab - Document View */}
+        <TabsContent value="informacion" className="mt-0">
+          <div className="bg-white rounded-lg border">
+            <div className="p-6 space-y-6">
+              {/* Datos Base Section */}
+              <Collapsible open={openSections.datosBase} onOpenChange={() => toggleSection("datosBase")}>
+                <div className="space-y-4">
+                  <CollapsibleTrigger className="flex items-center justify-between w-full pb-3 border-b hover:opacity-70 transition-opacity">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-black" />
+                      <h2 className="text-base font-semibold">Datos Base</h2>
+                    </div>
+                    <ChevronDown
+                      className={cn(
+                        "h-4 w-4 text-black transition-transform duration-200",
+                        openSections.datosBase && "rotate-180",
+                      )}
+                    />
+                  </CollapsibleTrigger>
+
+                  <CollapsibleContent>
+                    <div className="grid grid-cols-3 gap-6">
+                      <div className="space-y-0">
+                        <p className="text-sm text-muted-foreground">Proforma</p>
+                        <p className="font-light leading-5 text-foreground text-sm uppercase">{order.proforma}</p>
                       </div>
-                      <Progress value={order.progreso} className="h-2" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                      <div className="space-y-0">
+                        <p className="text-sm text-muted-foreground">Shipper</p>
+                        <p className="font-light leading-5 text-foreground text-sm uppercase">{order.shipper}</p>
+                      </div>
+                      <div className="space-y-0">
+                        <p className="text-sm text-muted-foreground">Consignee</p>
+                        <p className="font-light leading-5 text-foreground text-sm uppercase">{order.consignee}</p>
+                      </div>
 
-              {/* Condiciones Generales */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <FileText className="h-5 w-5" />
-                    Condiciones Generales
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-1">
-                      <p className="text-sm text-muted-foreground">Shipper</p>
-                      <p className="font-medium text-blue-600">{order.shipper}</p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-sm text-muted-foreground">Consignee</p>
-                      <p className="font-medium text-blue-600">{order.consignee}</p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-sm text-muted-foreground">Notify</p>
-                      <p className="font-medium text-blue-600">{order.notify}</p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-sm text-muted-foreground">Incoterms® 2020</p>
-                      <p className="font-medium text-green-600">{order.incoterms}</p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-sm text-muted-foreground">Términos de Flete</p>
-                      <p className="font-medium">{order.terminosFlete}</p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-sm text-muted-foreground">Origen</p>
-                      <p className="font-medium text-green-600">{order.origen}</p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-sm text-muted-foreground">Destino</p>
-                      <p className="font-medium text-green-600">{order.destino}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                      <div className="space-y-0">
+                        <p className="text-sm text-muted-foreground">Notify</p>
+                        <p className="font-light leading-5 text-foreground text-sm uppercase">{order.notify}</p>
+                      </div>
+                      <div className="space-y-0">
+                        <p className="text-sm text-muted-foreground">Origen</p>
+                        <p className="font-light leading-5 text-foreground text-sm uppercase">{order.origen}</p>
+                      </div>
+                      <div className="space-y-0">
+                        <p className="text-sm text-muted-foreground">Destino</p>
+                        <p className="font-light leading-5 text-foreground text-sm uppercase">{order.destino}</p>
+                      </div>
 
-              {/* Productos */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Package className="h-5 w-5" />
-                    Productos
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {order.productos.map((producto) => (
-                    <Collapsible key={producto.id}>
-                      <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg border bg-background p-4 hover:bg-accent">
-                        <div className="flex items-center gap-3">
-                          <span className="font-semibold">{producto.nombre}</span>
-                          <span className="text-sm text-muted-foreground">({producto.hsCode})</span>
-                          <Badge variant="outline" className="text-blue-600">
-                            {producto.empaque.split("/")[0].trim()}
-                          </Badge>
+                      <div className="space-y-0">
+                        <p className="text-sm text-muted-foreground">Tipo de Envío</p>
+                        <p className="font-light leading-5 text-foreground text-sm uppercase">{order.transporte}</p>
+                      </div>
+                      <div className="space-y-0">
+                        <p className="text-sm text-muted-foreground">Incoterms® 2020</p>
+                        <p className="font-light leading-5 text-foreground text-sm uppercase">{order.incoterms}</p>
+                      </div>
+                      <div className="space-y-0">
+                        <p className="text-sm text-muted-foreground">Condiciones de Pago Comercial</p>
+                        <p className="font-light leading-5 text-foreground text-sm uppercase">
+                          {order.condicionesPago || "N/A"}
+                        </p>
+                      </div>
+
+                      <div className="space-y-0">
+                        <p className="text-sm text-muted-foreground">Condición Flete</p>
+                        <p className="font-light leading-5 text-foreground text-sm uppercase">{order.terminosFlete}</p>
+                      </div>
+                      <div className="space-y-0">
+                        <p className="text-sm text-muted-foreground">Régimen Aduanero Principal</p>
+                        <p className="font-light leading-5 text-foreground text-sm uppercase">
+                          {order.regimenAduanero || "Exportación Definitiva"}
+                        </p>
+                      </div>
+                      <div className="space-y-0">
+                        <p className="text-sm text-muted-foreground">Tratamiento Especial</p>
+                        <p className="font-light leading-5 text-foreground text-sm uppercase">
+                          {order.tratamientoEspecial || "Ninguno"}
+                        </p>
+                      </div>
+                    </div>
+                  </CollapsibleContent>
+                </div>
+              </Collapsible>
+
+              {/* Productos Section */}
+              <Collapsible open={openSections.productos} onOpenChange={() => toggleSection("productos")}>
+                <div className="space-y-4">
+                  <CollapsibleTrigger className="flex items-center justify-between w-full pb-3 border-b hover:opacity-70 transition-opacity">
+                    <div className="flex items-center gap-2">
+                      <Package className="h-4 w-4 text-black" />
+                      <h2 className="text-base font-semibold">Productos</h2>
+                    </div>
+                    <ChevronDown
+                      className={cn(
+                        "h-4 w-4 text-black transition-transform duration-200",
+                        openSections.productos && "rotate-180",
+                      )}
+                    />
+                  </CollapsibleTrigger>
+
+                  <CollapsibleContent>
+                    <div className="space-y-4">
+                      {order.productos.map((producto, index) => (
+                        <div key={producto.id} className="space-y-4 p-4 rounded-lg border bg-gray-50/50">
+                          <h3 className="font-semibold text-sm">Producto {index + 1}</h3>
+
+                          <div className="grid grid-cols-3 gap-6">
+                            <div className="space-y-0">
+                              <p className="text-sm text-muted-foreground">Código + Descripción Comercial</p>
+                              <p className="font-light leading-5 text-foreground text-sm uppercase">
+                                {producto.nombre}
+                              </p>
+                            </div>
+                            <div className="space-y-0">
+                              <p className="text-sm text-muted-foreground">Partida Arancelaria</p>
+                              <p className="font-light leading-5 text-foreground text-sm uppercase">
+                                {producto.hsCode}
+                              </p>
+                            </div>
+                            <div className="space-y-0">
+                              <p className="text-sm text-muted-foreground">Unidad Comercial</p>
+                              <p className="font-light leading-5 text-foreground text-sm uppercase">
+                                {producto.presentacion}
+                              </p>
+                            </div>
+
+                            <div className="space-y-0">
+                              <p className="text-sm text-muted-foreground">País de Origen</p>
+                              <p className="font-light leading-5 text-foreground text-sm uppercase">
+                                {producto.paisOrigen || "Perú"}
+                              </p>
+                            </div>
+                            <div className="space-y-0">
+                              <p className="text-sm text-muted-foreground">Precio FOB Unitario (USD)</p>
+                              <p className="font-light leading-5 text-foreground text-sm uppercase">
+                                {producto.precioUnitario || "N/A"}
+                              </p>
+                            </div>
+                            <div className="space-y-0">
+                              <p className="text-sm text-muted-foreground">Dimensiones de Unidad Comercial (cm³)</p>
+                              <p className="font-light leading-5 text-foreground text-sm uppercase">
+                                {producto.dimensiones || "N/A"}
+                              </p>
+                            </div>
+
+                            <div className="col-span-3 border-t pt-4" />
+
+                            <div className="space-y-0">
+                              <p className="text-sm text-muted-foreground">Unidades Comerciales Totales</p>
+                              <p className="font-light leading-5 text-foreground text-sm uppercase">
+                                {producto.cantidad || "N/A"}
+                              </p>
+                            </div>
+                            <div className="space-y-0">
+                              <p className="text-sm text-muted-foreground">Descuento</p>
+                              <p className="font-light leading-5 text-foreground text-sm uppercase">
+                                {producto.descuento || "0"}
+                              </p>
+                            </div>
+                            <div className="space-y-0">
+                              <p className="text-sm text-muted-foreground">Certificados Requeridos</p>
+                              <p className="font-light leading-5 text-foreground text-sm uppercase">
+                                {producto.certificado}
+                              </p>
+                            </div>
+
+                            <div className="space-y-0">
+                              <p className="text-sm text-muted-foreground">Precio FOB Total (USD)</p>
+                              <p className="font-light leading-5 text-foreground text-sm uppercase">
+                                {producto.valorFOB}
+                              </p>
+                            </div>
+                            <div className="space-y-0">
+                              <p className="text-sm text-muted-foreground">Empaques Secundarios Totales (Bultos)</p>
+                              <p className="font-light leading-5 text-foreground text-sm uppercase">
+                                {producto.empaque}
+                              </p>
+                            </div>
+                            <div className="space-y-0">
+                              <p className="text-sm text-muted-foreground">Unidades Físicas Totales</p>
+                              <p className="font-light leading-5 text-foreground text-sm uppercase">
+                                {producto.unidadesFisicas || "N/A"}
+                              </p>
+                            </div>
+
+                            <div className="space-y-0">
+                              <p className="text-sm text-muted-foreground">Peso Neto Total (Kg)</p>
+                              <p className="font-light leading-5 text-foreground text-sm uppercase">
+                                {producto.pesoNeto}
+                              </p>
+                            </div>
+                            <div className="space-y-0">
+                              <p className="text-sm text-muted-foreground">Peso Bruto Total (Kg)</p>
+                              <p className="font-light leading-5 text-foreground text-sm uppercase">
+                                {producto.pesoBruto}
+                              </p>
+                            </div>
+                          </div>
                         </div>
-                        <ChevronDown className="h-4 w-4 transition-transform ui-expanded:rotate-180" />
-                      </CollapsibleTrigger>
-                      <CollapsibleContent className="mt-2 rounded-lg border bg-background p-4">
-                        <div className="grid gap-4 md:grid-cols-2">
-                          <div className="space-y-1">
-                            <p className="text-sm text-muted-foreground">Certificado/Inspección</p>
-                            <p className="font-medium">{producto.certificado}</p>
-                          </div>
-                          <div className="space-y-1">
-                            <p className="text-sm text-muted-foreground">Presentación</p>
-                            <p className="font-medium text-blue-600">{producto.presentacion}</p>
-                          </div>
-                          <div className="space-y-1">
-                            <p className="text-sm text-muted-foreground">Empaque</p>
-                            <p className="font-medium text-blue-600">{producto.empaque}</p>
-                          </div>
-                          <div className="space-y-1">
-                            <p className="text-sm text-muted-foreground">Pesos Net/Brut (Kg)</p>
-                            <p className="font-medium">
-                              {producto.pesoNeto} / {producto.pesoBruto}
-                            </p>
-                          </div>
-                          <div className="space-y-1">
-                            <p className="text-sm text-muted-foreground">Volumen</p>
-                            <p className="font-medium">{producto.volumen}</p>
-                          </div>
-                          <div className="space-y-1">
-                            <p className="text-sm text-muted-foreground">Valor FOB (USD)</p>
-                            <p className="font-medium">{producto.valorFOB}</p>
-                          </div>
-                        </div>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  ))}
-                </CardContent>
-              </Card>
-            </div>
+                      ))}
+                    </div>
+                  </CollapsibleContent>
+                </div>
+              </Collapsible>
 
-            {/* Right Column */}
-            <div className="space-y-6">
-              {/* Logística Internacional */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Ship className="h-5 w-5" />
-                    Logística Internacional
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Transporte</p>
-                    <p className="font-medium">{order.transporte}</p>
-                  </div>
-                  <Separator />
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Freight Forwarder</p>
-                    <p className="font-medium text-blue-600">{order.freightForwarder}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Línea Naviera</p>
-                    <p className="font-medium text-blue-600">{order.lineaNaviera}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Nave y Viaje</p>
-                    <p className="font-medium">{order.naveViaje}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Tipo de BL</p>
-                    <p className="font-medium text-green-600">{order.tipoBL}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Contenedores y Tipo</p>
-                    <p className="font-medium">{order.contenedorTipo}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">HAZ/IMO/REEFER</p>
-                    <p className="font-medium text-green-600">{order.hazImoReefer}</p>
-                  </div>
-                  <Separator />
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <p className="text-sm text-muted-foreground">Empty Pickup</p>
-                      <p className="text-sm font-medium">{order.emptyPickup}</p>
+              {/* Logística Internacional Section */}
+              <Collapsible
+                open={openSections.logisticaInternacional}
+                onOpenChange={() => toggleSection("logisticaInternacional")}
+              >
+                <div className="space-y-4">
+                  <CollapsibleTrigger className="flex items-center justify-between w-full pb-3 border-b hover:opacity-70 transition-opacity">
+                    <div className="flex items-center gap-2">
+                      <Ship className="h-4 w-4 text-black" />
+                      <h2 className="text-base font-semibold">Logística Internacional</h2>
                     </div>
-                    <div className="flex justify-between">
-                      <p className="text-sm text-muted-foreground">Shipping Instructions (SI)</p>
-                      <p className="text-sm font-medium">{order.shippingInstructions}</p>
-                    </div>
-                    <div className="flex justify-between">
-                      <p className="text-sm text-muted-foreground">Verified Gross Mass (VGM)</p>
-                      <p className="text-sm font-medium">{order.verifiedGrossMass}</p>
-                    </div>
-                    <div className="flex justify-between">
-                      <p className="text-sm text-muted-foreground">Dry CY</p>
-                      <p className="text-sm font-medium">{order.dryCY}</p>
-                    </div>
-                    <div className="flex justify-between">
-                      <p className="text-sm text-muted-foreground">Reefer CY</p>
-                      <p className="text-sm font-medium">{order.reeferCY}</p>
-                    </div>
-                    <div className="flex justify-between">
-                      <p className="text-sm text-muted-foreground">Corrección BL</p>
-                      <p className="text-sm font-medium">{order.correccionBL}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                    <ChevronDown
+                      className={cn(
+                        "h-4 w-4 text-black transition-transform duration-200",
+                        openSections.logisticaInternacional && "rotate-180",
+                      )}
+                    />
+                  </CollapsibleTrigger>
 
-              {/* Logística Origen */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Package className="h-5 w-5" />
-                    Logística Origen
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Tipo de Embarque</p>
-                    <p className="font-medium text-blue-600">{order.tipoEmbarque}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Planta</p>
-                    <p className="font-medium">{order.planta}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Agencia de Aduanas</p>
-                    <p className="font-medium text-blue-600">{order.agenciaAduanas}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Operador / Transporte</p>
-                    <p className="font-medium text-blue-600">{order.operadorTransporte}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Depósito de Vacíos</p>
-                    <p className="font-medium text-blue-600">{order.depositoVacios}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Depósito Temporal</p>
-                    <p className="font-medium text-blue-600">{order.depositoTemporal}</p>
-                  </div>
-                </CardContent>
-              </Card>
+                  <CollapsibleContent>
+                    <div className="grid grid-cols-3 gap-6">
+                      <div className="space-y-0">
+                        <p className="text-sm text-muted-foreground">Tipo de Carga</p>
+                        <p className="font-light leading-5 text-foreground text-sm uppercase">
+                          {order.tipoCarga || "N/A"}
+                        </p>
+                      </div>
+                      <div className="space-y-0">
+                        <p className="text-sm text-muted-foreground">Tipo de BL</p>
+                        <p className="font-light leading-5 text-foreground text-sm uppercase">{order.tipoBL}</p>
+                      </div>
+                      <div className="space-y-0">
+                        <p className="text-sm text-muted-foreground">Agente de Carga</p>
+                        <p className="font-light leading-5 text-foreground text-sm uppercase">
+                          {order.agenteCarga || "N/A"}
+                        </p>
+                      </div>
+
+                      <div className="space-y-0">
+                        <p className="text-sm text-muted-foreground">Naviera</p>
+                        <p className="font-light leading-5 text-foreground text-sm uppercase">{order.lineaNaviera}</p>
+                      </div>
+                      <div className="space-y-0">
+                        <p className="text-sm text-muted-foreground">N° de Booking</p>
+                        <p className="font-light leading-5 text-foreground text-sm uppercase">
+                          {order.numeroBooking || "N/A"}
+                        </p>
+                      </div>
+                      <div className="space-y-0">
+                        <p className="text-sm text-muted-foreground">N° de Viaje / Buque</p>
+                        <p className="font-light leading-5 text-foreground text-sm uppercase">{order.naveViaje}</p>
+                      </div>
+
+                      <div className="space-y-0">
+                        <p className="text-sm text-muted-foreground">Tipo de Contenedores</p>
+                        <p className="font-light leading-5 text-foreground text-sm uppercase">
+                          {order.tipoContenedor || "N/A"}
+                        </p>
+                      </div>
+                      <div className="space-y-0">
+                        <p className="text-sm text-muted-foreground">Cantidad de Contenedores</p>
+                        <p className="font-light leading-5 text-foreground text-sm uppercase">{order.contenedorTipo}</p>
+                      </div>
+                      <div className="space-y-0">
+                        <p className="text-sm text-muted-foreground">Depósito de Retiro</p>
+                        <p className="font-light leading-5 text-foreground text-sm uppercase">
+                          {order.depositoRetiro || "N/A"}
+                        </p>
+                      </div>
+
+                      <div className="space-y-0">
+                        <p className="text-sm text-muted-foreground">Puerto de Origen</p>
+                        <p className="font-light leading-5 text-foreground text-sm uppercase">
+                          {order.puertoOrigen || order.origen}
+                        </p>
+                      </div>
+                      <div className="space-y-0">
+                        <p className="text-sm text-muted-foreground">Puerto de Destino</p>
+                        <p className="font-light leading-5 text-foreground text-sm uppercase">
+                          {order.puertoDestino || order.destino}
+                        </p>
+                      </div>
+                      <div className="space-y-0">
+                        <p className="text-sm text-muted-foreground">Fecha Estimada de Embarque (ETD)</p>
+                        <p className="font-light leading-5 text-foreground text-sm uppercase">{order.etd}</p>
+                      </div>
+
+                      <div className="space-y-0">
+                        <p className="text-sm text-muted-foreground">Freight Forwarder</p>
+                        <p className="font-light leading-5 text-foreground text-sm uppercase">
+                          {order.freightForwarder}
+                        </p>
+                      </div>
+                      <div className="space-y-0">
+                        <p className="text-sm text-muted-foreground">HAZ/IMO/REEFER</p>
+                        <p className="font-light leading-5 text-foreground text-sm uppercase">{order.hazImoReefer}</p>
+                      </div>
+                      <div className="space-y-0">
+                        <p className="text-sm text-muted-foreground">Empty Pickup</p>
+                        <p className="font-light leading-5 text-foreground text-sm uppercase">{order.emptyPickup}</p>
+                      </div>
+
+                      <div className="space-y-0">
+                        <p className="text-sm text-muted-foreground">Shipping Instructions (SI)</p>
+                        <p className="font-light leading-5 text-foreground text-sm uppercase">
+                          {order.shippingInstructions}
+                        </p>
+                      </div>
+                      <div className="space-y-0">
+                        <p className="text-sm text-muted-foreground">Verified Gross Mass (VGM)</p>
+                        <p className="font-light leading-5 text-foreground text-sm uppercase">
+                          {order.verifiedGrossMass}
+                        </p>
+                      </div>
+                      <div className="space-y-0">
+                        <p className="text-sm text-muted-foreground">Dry CY</p>
+                        <p className="font-light leading-5 text-foreground text-sm uppercase">{order.dryCY}</p>
+                      </div>
+
+                      <div className="space-y-0">
+                        <p className="text-sm text-muted-foreground">Reefer CY</p>
+                        <p className="font-light leading-5 text-foreground text-sm uppercase">{order.reeferCY}</p>
+                      </div>
+                      <div className="space-y-0">
+                        <p className="text-sm text-muted-foreground">Corrección BL</p>
+                        <p className="font-light leading-5 text-foreground text-sm uppercase">{order.correccionBL}</p>
+                      </div>
+                    </div>
+                  </CollapsibleContent>
+                </div>
+              </Collapsible>
+
+              {/* Logística en Origen Section */}
+              <Collapsible open={openSections.logisticaOrigen} onOpenChange={() => toggleSection("logisticaOrigen")}>
+                <div className="space-y-4">
+                  <CollapsibleTrigger className="flex items-center justify-between w-full pb-3 border-b hover:opacity-70 transition-opacity">
+                    <div className="flex items-center gap-2">
+                      <Container className="h-4 w-4 text-black" />
+                      <h2 className="text-base font-semibold">Logística en Origen</h2>
+                    </div>
+                    <ChevronDown
+                      className={cn(
+                        "h-4 w-4 text-black transition-transform duration-200",
+                        openSections.logisticaOrigen && "rotate-180",
+                      )}
+                    />
+                  </CollapsibleTrigger>
+
+                  <CollapsibleContent>
+                    <div className="grid grid-cols-3 gap-6">
+                      <div className="space-y-0">
+                        <p className="text-sm text-muted-foreground">Operador Logístico</p>
+                        <p className="font-light leading-5 text-foreground text-sm uppercase">
+                          {order.operadorTransporte}
+                        </p>
+                      </div>
+                      <div className="space-y-0">
+                        <p className="text-sm text-muted-foreground">Agencia de Aduana</p>
+                        <p className="font-light leading-5 text-foreground text-sm uppercase">{order.agenciaAduanas}</p>
+                      </div>
+                      <div className="space-y-0">
+                        <p className="text-sm text-muted-foreground">Planta</p>
+                        <p className="font-light leading-5 text-foreground text-sm uppercase">{order.planta}</p>
+                      </div>
+
+                      <div className="space-y-0">
+                        <p className="text-sm text-muted-foreground">Modalidad de despacho</p>
+                        <p className="font-light leading-5 text-foreground text-sm uppercase">
+                          {order.modalidadDespacho || "N/A"}
+                        </p>
+                      </div>
+                      <div className="space-y-0">
+                        <p className="text-sm text-muted-foreground">Terminal de Ingreso (Puerto o DT)</p>
+                        <p className="font-light leading-5 text-foreground text-sm uppercase">
+                          {order.terminalIngreso || "N/A"}
+                        </p>
+                      </div>
+                      <div className="space-y-0">
+                        <p className="text-sm text-muted-foreground">Tipo de Embarque</p>
+                        <p className="font-light leading-5 text-foreground text-sm uppercase">{order.tipoEmbarque}</p>
+                      </div>
+
+                      <div className="space-y-0">
+                        <p className="text-sm text-muted-foreground">Depósito de Vacíos</p>
+                        <p className="font-light leading-5 text-foreground text-sm uppercase">{order.depositoVacios}</p>
+                      </div>
+                      <div className="space-y-0">
+                        <p className="text-sm text-muted-foreground">Depósito Temporal</p>
+                        <p className="font-light leading-5 text-foreground text-sm uppercase">
+                          {order.depositoTemporal}
+                        </p>
+                      </div>
+                    </div>
+                  </CollapsibleContent>
+                </div>
+              </Collapsible>
             </div>
           </div>
         </TabsContent>
 
+        {/* Other Tabs */}
         <TabsContent value="trazabilidad" className="mt-0">
-          <Card>
-            <CardContent className="flex h-[400px] items-center justify-center">
-              <p className="text-muted-foreground">Contenido de Trazabilidad próximamente</p>
-            </CardContent>
-          </Card>
+          <TrazabilidadTab contenedores={order.contenedores || []} incoterm={order.incoterms} />
         </TabsContent>
 
         <TabsContent value="documentos" className="mt-0">
-          <Card>
-            <CardContent className="flex h-[400px] items-center justify-center">
-              <p className="text-muted-foreground">Contenido de Documentos próximamente</p>
-            </CardContent>
-          </Card>
+          <div className="bg-white rounded-lg border p-8">
+            <p className="text-center text-muted-foreground">Contenido de Documentos próximamente</p>
+          </div>
         </TabsContent>
 
         <TabsContent value="historial" className="mt-0">
-          <Card>
-            <CardContent className="flex h-[400px] items-center justify-center">
-              <p className="text-muted-foreground">Contenido de Historial próximamente</p>
-            </CardContent>
-          </Card>
+          <div className="bg-white rounded-lg border p-8">
+            <p className="text-center text-muted-foreground">Contenido de Historial próximamente</p>
+          </div>
         </TabsContent>
 
         <TabsContent value="pagos" className="mt-0">
-          <Card>
-            <CardContent className="flex h-[400px] items-center justify-center">
-              <p className="text-muted-foreground">Contenido de Pagos próximamente</p>
-            </CardContent>
-          </Card>
+          <div className="bg-white rounded-lg border p-8">
+            <p className="text-center text-muted-foreground">Contenido de Pagos próximamente</p>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

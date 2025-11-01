@@ -450,7 +450,7 @@ export default function SignupPage() {
               </div>
             </div>
           </CardHeader>
-          <CardContent className="pt-6">
+          <CardContent className="pt-6 px-6">
             {/* Step 1: Usuario Master */}
             {currentStep === 1 && (
               <div className="space-y-4">

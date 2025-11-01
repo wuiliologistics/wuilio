@@ -1,3 +1,5 @@
+import type { Container } from "./container"
+
 export interface OrderDetail {
   id: string
   estado: "En Progreso" | "Completado" | "Pendiente" | "Programado"
@@ -37,6 +39,8 @@ export interface OrderDetail {
   operadorTransporte: string
   depositoVacios: string
   depositoTemporal: string
+
+  contenedores?: Container[]
 }
 
 export interface ProductoDetalle {

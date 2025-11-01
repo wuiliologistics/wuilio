@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Search, Settings, MoreHorizontal, ChevronLeft, ChevronRight } from "lucide-react"
@@ -9,6 +11,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 import type { Order } from "@/types/order"
 
@@ -20,12 +32,16 @@ interface OrdersTableProps {
   onStatusFilterChange: (value: string) => void
   typeFilter: string
   onTypeFilterChange: (value: string) => void
+  onOrderUpdate: (order: Order) => void
 }
 
 const statusColors = {
+  Borrador: "bg-gray-100 text-gray-700 hover:bg-gray-100",
+  Creado: "bg-yellow-100 text-yellow-700 hover:bg-yellow-100",
   Programado: "bg-blue-100 text-blue-700 hover:bg-blue-100",
-  Pendiente: "bg-red-100 text-red-700 hover:bg-red-100",
+  "En progreso": "bg-yellow-100 text-yellow-700 hover:bg-yellow-100",
   Completado: "bg-green-100 text-green-700 hover:bg-green-100",
+  Cancelado: "bg-slate-100 text-slate-700 hover:bg-slate-100",
 }
 
 export function OrdersTable({
@@ -36,13 +52,57 @@ export function OrdersTable({
   onStatusFilterChange,
   typeFilter,
   onTypeFilterChange,
+  onOrderUpdate,
 }: OrdersTableProps) {
   const [currentPage, setCurrentPage] = useState(1)
+  const [cancelModalOpen, setCancelModalOpen] = useState(false)
+  const [orderToCancel, setOrderToCancel] = useState<Order | null>(null)
+  const [cancellationReason, setCancellationReason] = useState("")
+
   const itemsPerPage = 10
   const totalPages = Math.ceil(orders.length / itemsPerPage)
   const router = useRouter()
 
   const paginatedOrders = orders.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+
+  const handleCancelClick = (order: Order, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setOrderToCancel(order)
+    setCancelModalOpen(true)
+  }
+
+  const handleConfirmCancel = () => {
+    if (orderToCancel && cancellationReason.trim()) {
+      const updatedOrder: Order = {
+        ...orderToCancel,
+        estado: "Cancelado",
+        motivoCancelacion: cancellationReason,
+      }
+
+      onOrderUpdate(updatedOrder)
+
+      setCancelModalOpen(false)
+      setOrderToCancel(null)
+      setCancellationReason("")
+    }
+  }
+
+  const handleCloseCancelModal = () => {
+    setCancelModalOpen(false)
+    setOrderToCancel(null)
+    setCancellationReason("")
+  }
+
+  const handleDeleteDraft = (order: Order, e: React.MouseEvent) => {
+    e.stopPropagation()
+    // TODO: Implement delete draft functionality
+    console.log("[v0] Delete draft:", order.id)
+  }
+
+  const handleEditDraft = (order: Order, e: React.MouseEvent) => {
+    e.stopPropagation()
+    router.push(`/ordenes/nueva?draft=${order.id}`)
+  }
 
   return (
     <div className="space-y-4 font-light">
@@ -64,9 +124,12 @@ export function OrdersTable({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos los estados</SelectItem>
+            <SelectItem value="Borrador">Borrador</SelectItem>
+            <SelectItem value="Creado">Creado</SelectItem>
             <SelectItem value="Programado">Programado</SelectItem>
-            <SelectItem value="Pendiente">Pendiente</SelectItem>
+            <SelectItem value="En progreso">En progreso</SelectItem>
             <SelectItem value="Completado">Completado</SelectItem>
+            <SelectItem value="Cancelado">Cancelado</SelectItem>
           </SelectContent>
         </Select>
 
@@ -88,7 +151,7 @@ export function OrdersTable({
       </div>
 
       {/* Table */}
-      <div className="rounded-lg border border-border bg-card">
+      <div className="rounded-lg border border-border bg-card overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -99,7 +162,7 @@ export function OrdersTable({
               <TableHead>Proforma</TableHead>
               <TableHead>Destino</TableHead>
               <TableHead>Booking</TableHead>
-              <TableHead className="w-[50px]"></TableHead>
+              <TableHead className="w-[50px] sticky right-0 bg-background shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.1)]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -127,7 +190,7 @@ export function OrdersTable({
                   <TableCell>{order.proforma}</TableCell>
                   <TableCell>{order.destino}</TableCell>
                   <TableCell>{order.booking}</TableCell>
-                  <TableCell>
+                  <TableCell className="sticky right-0 bg-background shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.1)]">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
@@ -135,18 +198,33 @@ export function OrdersTable({
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            router.push(`/ordenes/ver/${order.id}`)
-                          }}
-                        >
-                          Ver detalle
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={(e) => e.stopPropagation()}>Editar</DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive" onClick={(e) => e.stopPropagation()}>
-                          Eliminar
-                        </DropdownMenuItem>
+                        {order.estado === "Borrador" ? (
+                          <>
+                            <DropdownMenuItem onClick={(e) => handleEditDraft(order, e)}>Editar</DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive" onClick={(e) => handleDeleteDraft(order, e)}>
+                              Eliminar
+                            </DropdownMenuItem>
+                          </>
+                        ) : (
+                          <>
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                router.push(`/ordenes/ver/${order.id}`)
+                              }}
+                            >
+                              Ver detalle
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={(e) => e.stopPropagation()}>Editar</DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onClick={(e) => handleCancelClick(order, e)}
+                              disabled={order.estado === "Completado"}
+                            >
+                              Cancelar
+                            </DropdownMenuItem>
+                          </>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -210,6 +288,44 @@ export function OrdersTable({
           <ChevronRight className="h-4 w-4" />
         </Button>
       </div>
+
+      {/* Cancel Order Modal */}
+      <Dialog open={cancelModalOpen} onOpenChange={handleCloseCancelModal}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Cancelar Orden</DialogTitle>
+            <DialogDescription>
+              ¿Estás seguro de que deseas cancelar la orden {orderToCancel?.id}? Por favor, proporciona un motivo para
+              la cancelación.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="cancellation-reason">
+                Motivo de cancelación <span className="text-red-500">*</span>
+              </Label>
+              <Textarea
+                id="cancellation-reason"
+                placeholder="Describe el motivo de la cancelación..."
+                value={cancellationReason}
+                onChange={(e) => setCancellationReason(e.target.value)}
+                rows={4}
+                className="resize-none"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCloseCancelModal}>
+              Volver
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmCancel} disabled={!cancellationReason.trim()}>
+              Confirmar cancelación
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

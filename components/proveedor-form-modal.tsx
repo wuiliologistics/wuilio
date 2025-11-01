@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
-import { Info } from "lucide-react"
+import { Info, ChevronDown, ChevronUp, X, Plus } from "lucide-react"
 import type { Proveedor } from "@/types/proveedor"
 
 const InfoTooltip = ({ text }: { text: string }) => (
@@ -285,6 +285,8 @@ export function ProveedorFormModal({ open, onClose, onSave, proveedor }: Proveed
   const [phoneCode, setPhoneCode] = useState("+51-Perú")
   const [phoneNumber, setPhoneNumber] = useState("")
   const [showLocalidad, setShowLocalidad] = useState(true)
+  const [showAdditionalEmails, setShowAdditionalEmails] = useState(false)
+  const [additionalEmails, setAdditionalEmails] = useState<string[]>([])
 
   useEffect(() => {
     if (proveedor) {
@@ -297,6 +299,13 @@ export function ProveedorFormModal({ open, onClose, onSave, proveedor }: Proveed
         numeroCuenta: proveedor.numeroCuenta || "",
         cci: proveedor.cci || "",
       })
+      if (proveedor.emailsAdicionales && proveedor.emailsAdicionales.length > 0) {
+        setAdditionalEmails(proveedor.emailsAdicionales)
+        setShowAdditionalEmails(true)
+      } else {
+        setAdditionalEmails([])
+        setShowAdditionalEmails(false)
+      }
       if (proveedor.telefono) {
         const matchedCode = COUNTRY_CODES.find((cc) => proveedor.telefono?.startsWith(cc.code))
         if (matchedCode) {
@@ -331,6 +340,8 @@ export function ProveedorFormModal({ open, onClose, onSave, proveedor }: Proveed
       setPhoneCode("+51-Perú")
       setPhoneNumber("")
       setShowLocalidad(true)
+      setAdditionalEmails([])
+      setShowAdditionalEmails(false)
     }
   }, [proveedor, open])
 
@@ -362,6 +373,24 @@ export function ProveedorFormModal({ open, onClose, onSave, proveedor }: Proveed
     }
   }
 
+  const handleAddEmail = () => {
+    setAdditionalEmails([...additionalEmails, ""])
+  }
+
+  const handleRemoveEmail = (index: number) => {
+    const newEmails = additionalEmails.filter((_, i) => i !== index)
+    setAdditionalEmails(newEmails)
+    if (newEmails.length === 0) {
+      setShowAdditionalEmails(false)
+    }
+  }
+
+  const handleEmailChange = (index: number, value: string) => {
+    const newEmails = [...additionalEmails]
+    newEmails[index] = value
+    setAdditionalEmails(newEmails)
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.tiposProveedor || formData.tiposProveedor.length === 0) {
@@ -369,7 +398,12 @@ export function ProveedorFormModal({ open, onClose, onSave, proveedor }: Proveed
       return
     }
     const fullPhone = phoneNumber ? `${phoneCode.split("-")[0]} ${phoneNumber}` : ""
-    onSave({ ...formData, telefono: fullPhone })
+    const validAdditionalEmails = additionalEmails.filter((email) => email.trim() !== "")
+    onSave({
+      ...formData,
+      telefono: fullPhone,
+      emailsAdicionales: validAdditionalEmails.length > 0 ? validAdditionalEmails : undefined,
+    })
     onClose()
   }
 
@@ -610,6 +644,59 @@ export function ProveedorFormModal({ open, onClose, onSave, proveedor }: Proveed
                   />
                 </div>
               </div>
+            </div>
+
+            {/* Additional Emails */}
+            <div className="space-y-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAdditionalEmails(!showAdditionalEmails)
+                  if (!showAdditionalEmails && additionalEmails.length === 0) {
+                    setAdditionalEmails([""])
+                  }
+                }}
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {showAdditionalEmails ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                <span>Agregar más emails (CC)</span>
+              </button>
+
+              {showAdditionalEmails && (
+                <div className="space-y-3 pl-6 border-l-2 border-border">
+                  {additionalEmails.map((email, index) => (
+                    <div key={index} className="flex gap-2 items-start">
+                      <div className="flex-1 space-y-2">
+                        <Input
+                          type="email"
+                          placeholder="email@empresa.com"
+                          value={email}
+                          onChange={(e) => handleEmailChange(index, e.target.value)}
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleRemoveEmail(index)}
+                        className="h-10 w-10 text-muted-foreground hover:text-destructive"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAddEmail}
+                    className="flex items-center gap-2 bg-transparent"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Agregar otro email
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
 

@@ -26,6 +26,8 @@ export interface Cliente {
   contacto: string
   telefono: string
   email: string
+  emailsAdicionales?: string[]
   estado: "Activo" | "Inactivo"
   notifies: Notify[]
+  condicionesPagoComercial?: string
 }

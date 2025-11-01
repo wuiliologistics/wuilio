@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { FileText, Package, EarthIcon, LucideContainer as LucideContainerIcon, Plus, X, Upload } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -12,6 +12,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { mockProductos } from "@/lib/mock-data-productos"
+import { mockClientes } from "@/lib/mock-data"
+import { mockProveedores } from "@/lib/mock-data-proveedores" // Import mockProveedores
+import { useCompany } from "@/contexts/company-context"
+import { ClienteFormModal } from "@/components/cliente-form-modal" // Import ClienteFormModal
+import { ProductoFormModal } from "@/components/producto-form-modal" // Import ProductoFormModal
+import { ProveedorFormModal } from "@/components/proveedor-form-modal" // Import ProveedorFormModal
+import type { Cliente } from "@/types/cliente" // Import Cliente type
+import type { Producto } from "@/types/producto" // Import Producto type
+import type { Proveedor } from "@/types/proveedor" // Import Proveedor type
 
 interface Product {
   id: string
@@ -42,13 +51,29 @@ interface Product {
 
 export default function NuevaOrdenPage() {
   const router = useRouter()
+  const { selectedCompanyName, registerFormDirty } = useCompany()
+
   const [tipoEnvio, setTipoEnvio] = useState<string>("")
+  const [modalidadDespacho, setModalidadDespacho] = useState<string>("")
+  const [terminalIngreso, setTerminalIngreso] = useState<string>("")
 
   const [logisticsMode, setLogisticsMode] = useState<"none" | "document" | "manual">("none")
 
   const fileInputRefMaritimo = useRef<HTMLInputElement>(null)
   const fileInputRefAereo = useRef<HTMLInputElement>(null)
   const fileInputRefTerrestre = useRef<HTMLInputElement>(null)
+
+  const [selectedConsignee, setSelectedConsignee] = useState<string>("")
+  const [condicionesPago, setCondicionesPago] = useState<string>("")
+
+  const [showClienteModal, setShowClienteModal] = useState(false)
+  const [showProductoModal, setShowProductoModal] = useState(false)
+  const [showProveedorModal, setShowProveedorModal] = useState(false)
+  const [proveedorModalType, setProveedorModalType] = useState<"agente" | "operador" | "agencia">("agente")
+
+  const [localClientes, setLocalClientes] = useState(mockClientes)
+  const [localProductos, setLocalProductos] = useState(mockProductos)
+  const [localProveedores, setLocalProveedores] = useState(mockProveedores)
 
   const [products, setProducts] = useState<Product[]>([
     {
@@ -79,8 +104,88 @@ export default function NuevaOrdenPage() {
     },
   ])
 
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      const hasChanges =
+        tipoEnvio !== "" ||
+        selectedConsignee !== "" ||
+        condicionesPago !== "" ||
+        products.some((p) => p.productoId !== "" || p.cantidadExportar > 0)
+
+      if (hasChanges) {
+        e.preventDefault()
+        e.returnValue = ""
+      }
+    }
+
+    window.addEventListener("beforeunload", handleBeforeUnload)
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload)
+  }, [tipoEnvio, selectedConsignee, condicionesPago, products])
+
+  useEffect(() => {
+    const hasChanges =
+      tipoEnvio !== "" ||
+      selectedConsignee !== "" ||
+      condicionesPago !== "" ||
+      products.some((p) => p.productoId !== "" || p.cantidadExportar > 0)
+
+    registerFormDirty(hasChanges)
+    console.log("[v0] Form dirty state:", hasChanges)
+  }, [tipoEnvio, selectedConsignee, condicionesPago, products, registerFormDirty])
+
+  const handleConsigneeChange = (clienteId: string) => {
+    if (clienteId === "create-new") {
+      setShowClienteModal(true)
+      return
+    }
+
+    setSelectedConsignee(clienteId)
+    const cliente = localClientes.find((c) => c.id === clienteId)
+    if (cliente) {
+      // Auto-fill condiciones de pago from client data
+      setCondicionesPago(cliente.condicionesPagoComercial || "")
+    }
+  }
+
+  const handleSaveCliente = (clienteData: Partial<Cliente>) => {
+    const newCliente: Cliente = {
+      ...clienteData,
+      id: `CLI-${String(localClientes.length + 1).padStart(3, "0")}`,
+      estado: "Activo",
+      notifies: clienteData.notifies || [],
+    } as Cliente
+    setLocalClientes([...localClientes, newCliente])
+    setSelectedConsignee(newCliente.id)
+    setShowClienteModal(false)
+  }
+
+  const handleSaveProducto = (productoData: Partial<Producto>) => {
+    const newProducto: Producto = {
+      ...productoData,
+      id: `PROD-${String(localProductos.length + 1).padStart(3, "0")}`,
+      estado: "Activo",
+    } as Producto
+    setLocalProductos([...localProductos, newProducto])
+    setShowProductoModal(false)
+  }
+
+  const handleSaveProveedor = (proveedorData: Partial<Proveedor>) => {
+    const newProveedor: Proveedor = {
+      ...proveedorData,
+      id: `PROV-${String(localProveedores.length + 1).padStart(3, "0")}`,
+      estado: "Activo",
+    } as Proveedor
+    setLocalProveedores([...localProveedores, newProveedor])
+    setShowProveedorModal(false)
+  }
+
   const handleProductSelect = (productIndex: number, productoId: string) => {
-    const selectedProducto = mockProductos.find((p) => p.id === productoId)
+    if (productoId === "create-new") {
+      setShowProductoModal(true)
+      return
+    }
+
+    const selectedProducto = localProductos.find((p) => p.id === productoId)
     if (!selectedProducto) return
 
     const updatedProducts = [...products]
@@ -274,6 +379,28 @@ export default function NuevaOrdenPage() {
     }
   }
 
+  const getTerminalOptions = () => {
+    if (modalidadDespacho === "via-directa") {
+      return [
+        { value: "apm-terminals", label: "Puerto del Callao - APM Terminals" },
+        { value: "dp-world", label: "Puerto del Callao - DP World" },
+        { value: "terminal-norte", label: "Puerto del Callao - Terminal Norte Multipropósito" },
+      ]
+    } else if (modalidadDespacho === "via-dt") {
+      return [
+        { value: "dt-ransa", label: "DT Ransa Callao" },
+        { value: "dt-neptunia", label: "DT Neptunia" },
+        { value: "dt-almacenes", label: "DT Almacenes del Perú" },
+      ]
+    }
+    return []
+  }
+
+  const handleModalidadChange = (value: string) => {
+    setModalidadDespacho(value)
+    setTerminalIngreso("") // Reset terminal selection
+  }
+
   return (
     <div className="space-y-6 pb-8">
       {/* Datos Base Section */}
@@ -284,33 +411,42 @@ export default function NuevaOrdenPage() {
             Datos Base
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-6 px-6">
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             <div className="space-y-2">
-              <Label htmlFor="proforma">Proforma</Label>
-              <Input id="proforma" className="w-full" placeholder="Número de proforma" />
+              <Label htmlFor="proforma">
+                Proforma <span className="text-red-500">*</span>
+              </Label>
+              <Input id="proforma" className="w-full" placeholder="Número de proforma" required />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="shipper">Shipper</Label>
-              <Select>
-                <SelectTrigger id="shipper" className="w-full">
-                  <SelectValue placeholder="Seleccionar shipper" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="wuilio">WUILIO PERU S.A.C.</SelectItem>
-                  <SelectItem value="other">Otro shipper</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="shipper">
+                Shipper <span className="text-red-500">*</span>
+              </Label>
+              <Input id="shipper" className="w-full bg-muted" value={selectedCompanyName} readOnly required />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="consignee">Consignee</Label>
-              <Select>
+              <Label htmlFor="consignee">
+                Consignee <span className="text-red-500">*</span>
+              </Label>
+              <Select value={selectedConsignee} onValueChange={handleConsigneeChange} required>
                 <SelectTrigger id="consignee" className="w-full">
                   <SelectValue placeholder="Seleccionar consignee" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ceramicos">CERAMICOS DEL SUR S.A.</SelectItem>
-                  <SelectItem value="other">Otro consignee</SelectItem>
+                  {localClientes
+                    .filter((c) => c.estado === "Activo")
+                    .map((cliente) => (
+                      <SelectItem key={cliente.id} value={cliente.id}>
+                        {cliente.empresa}
+                      </SelectItem>
+                    ))}
+                  <SelectItem value="create-new" className="text-primary font-medium border-t">
+                    <div className="flex items-center gap-2">
+                      <Plus className="h-4 w-4" />
+                      Crear nuevo cliente
+                    </div>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -318,20 +454,38 @@ export default function NuevaOrdenPage() {
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             <div className="space-y-2">
-              <Label htmlFor="notify">Notify</Label>
-              <Select>
+              <Label htmlFor="notify">
+                Notify <span className="text-red-500">*</span>
+              </Label>
+              <Select disabled={!selectedConsignee} required>
                 <SelectTrigger id="notify" className="w-full">
-                  <SelectValue placeholder="Seleccionar notify" />
+                  <SelectValue
+                    placeholder={selectedConsignee ? "Seleccionar notify" : "Primero seleccione consignee"}
+                  />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ceramicos">CERAMICOS DEL SUR S.A.</SelectItem>
-                  <SelectItem value="other">Otro notify</SelectItem>
+                  {selectedConsignee &&
+                    localClientes
+                      .find((c) => c.id === selectedConsignee)
+                      ?.notifies.map((notify) => (
+                        <SelectItem key={notify.id} value={notify.id}>
+                          {notify.empresaNotify}
+                        </SelectItem>
+                      ))}
+                  {selectedConsignee &&
+                    localClientes.find((c) => c.id === selectedConsignee)?.notifies.length === 0 && (
+                      <SelectItem value="none" disabled>
+                        No hay notifies disponibles
+                      </SelectItem>
+                    )}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="origin">Origen</Label>
-              <Select>
+              <Label htmlFor="origin">
+                Origen <span className="text-red-500">*</span>
+              </Label>
+              <Select required>
                 <SelectTrigger id="origin" className="w-full">
                   <SelectValue placeholder="Seleccionar origen" />
                 </SelectTrigger>
@@ -342,8 +496,10 @@ export default function NuevaOrdenPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="destination">Destino</Label>
-              <Select>
+              <Label htmlFor="destination">
+                Destino <span className="text-red-500">*</span>
+              </Label>
+              <Select required>
                 <SelectTrigger id="destination" className="w-full">
                   <SelectValue placeholder="Seleccionar destino" />
                 </SelectTrigger>
@@ -357,8 +513,10 @@ export default function NuevaOrdenPage() {
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             <div className="space-y-2">
-              <Label htmlFor="tipo-envio">Tipo de Envío</Label>
-              <Select onValueChange={setTipoEnvio}>
+              <Label htmlFor="tipo-envio">
+                Tipo de Envío <span className="text-red-500">*</span>
+              </Label>
+              <Select onValueChange={setTipoEnvio} required>
                 <SelectTrigger id="tipo-envio" className="w-full">
                   <SelectValue placeholder="Seleccionar tipo de envío" />
                 </SelectTrigger>
@@ -370,8 +528,10 @@ export default function NuevaOrdenPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="incoterms">Incoterms® 2020</Label>
-              <Select disabled={!tipoEnvio}>
+              <Label htmlFor="incoterms">
+                Incoterms® 2020 <span className="text-red-500">*</span>
+              </Label>
+              <Select disabled={!tipoEnvio} required>
                 <SelectTrigger id="incoterms" className="w-full">
                   <SelectValue placeholder={tipoEnvio ? "Seleccionar incoterm" : "Primero seleccione tipo de envío"} />
                 </SelectTrigger>
@@ -385,15 +545,26 @@ export default function NuevaOrdenPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="condiciones-pago">Condiciones de Pago Comercial</Label>
-              <Input id="condiciones-pago" className="w-full" placeholder="Ej: 30% adelanto, 70% contra BL" />
+              <Label htmlFor="condiciones-pago">
+                Condiciones de Pago Comercial <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="condiciones-pago"
+                className="w-full"
+                placeholder="Ej: 30% adelanto, 70% contra BL"
+                value={condicionesPago}
+                onChange={(e) => setCondicionesPago(e.target.value)}
+                required
+              />
             </div>
           </div>
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             <div className="space-y-2">
-              <Label htmlFor="condicion-flete">Condición Flete</Label>
-              <Select>
+              <Label htmlFor="condicion-flete">
+                Condición Flete <span className="text-red-500">*</span>
+              </Label>
+              <Select required>
                 <SelectTrigger id="condicion-flete" className="w-full">
                   <SelectValue placeholder="Seleccionar condición" />
                 </SelectTrigger>
@@ -404,8 +575,10 @@ export default function NuevaOrdenPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="regimen-aduanero">Régimen Aduanero Principal</Label>
-              <Select>
+              <Label htmlFor="regimen-aduanero">
+                Régimen Aduanero Principal <span className="text-red-500">*</span>
+              </Label>
+              <Select defaultValue="exportacion-definitiva" required>
                 <SelectTrigger id="regimen-aduanero" className="w-full">
                   <SelectValue placeholder="Seleccionar régimen" />
                 </SelectTrigger>
@@ -446,7 +619,7 @@ export default function NuevaOrdenPage() {
             Productos
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-6 px-6">
           {products.map((product, index) => (
             <div key={product.id} className="space-y-6 rounded-lg border p-6">
               <div className="flex items-center justify-between">
@@ -464,18 +637,28 @@ export default function NuevaOrdenPage() {
                   <Label htmlFor={`description-${product.id}`}>
                     Código + Descripción Comercial <span className="text-red-500">*</span>
                   </Label>
-                  <Select value={product.productoId} onValueChange={(value) => handleProductSelect(index, value)}>
+                  <Select
+                    value={product.productoId}
+                    onValueChange={(value) => handleProductSelect(index, value)}
+                    required
+                  >
                     <SelectTrigger id={`description-${product.id}`} className="w-full">
                       <SelectValue placeholder="Seleccionar producto" />
                     </SelectTrigger>
                     <SelectContent>
-                      {mockProductos
+                      {localProductos
                         .filter((p) => p.estado === "Activo")
                         .map((producto) => (
                           <SelectItem key={producto.id} value={producto.id}>
                             {producto.codigo_producto} - {producto.descripcion_comercial}
                           </SelectItem>
                         ))}
+                      <SelectItem value="create-new" className="text-primary font-medium border-t">
+                        <div className="flex items-center gap-2">
+                          <Plus className="h-4 w-4" />
+                          Crear nuevo producto
+                        </div>
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -733,7 +916,7 @@ export default function NuevaOrdenPage() {
               Logística Internacional
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-6 px-6">
             {/* Marítimo Section */}
             {tipoEnvio === "maritimo" && (
               <div className="space-y-6">
@@ -742,9 +925,7 @@ export default function NuevaOrdenPage() {
                 {/* Manual fields */}
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                   <div className="space-y-2">
-                    <Label htmlFor="tipo-carga">
-                      Tipo de Carga <span className="text-red-500">*</span>
-                    </Label>
+                    <Label htmlFor="tipo-carga">Tipo de Carga</Label>
                     <Select>
                       <SelectTrigger id="tipo-carga" className="w-full">
                         <SelectValue placeholder="Seleccionar tipo" />
@@ -757,9 +938,7 @@ export default function NuevaOrdenPage() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="tipo-bl">
-                      Tipo de BL <span className="text-red-500">*</span>
-                    </Label>
+                    <Label htmlFor="tipo-bl">Tipo de BL</Label>
                     <Select>
                       <SelectTrigger id="tipo-bl" className="w-full">
                         <SelectValue placeholder="Seleccionar tipo" />
@@ -772,10 +951,34 @@ export default function NuevaOrdenPage() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="agente-carga-maritimo">
-                      Agente de Carga <span className="text-red-500">*</span>
-                    </Label>
-                    <Input id="agente-carga-maritimo" className="w-full" placeholder="Nombre del agente de carga" />
+                    <Label htmlFor="agente-carga-maritimo">Agente de Carga</Label>
+                    <Select
+                      onValueChange={(value) => {
+                        if (value === "create-new") {
+                          setProveedorModalType("agente")
+                          setShowProveedorModal(true)
+                        }
+                      }}
+                    >
+                      <SelectTrigger id="agente-carga-maritimo" className="w-full">
+                        <SelectValue placeholder="Seleccionar agente" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {localProveedores
+                          .filter((p) => p.estado === "Activo")
+                          .map((proveedor) => (
+                            <SelectItem key={proveedor.id} value={proveedor.id}>
+                              {proveedor.empresa}
+                            </SelectItem>
+                          ))}
+                        <SelectItem value="create-new" className="text-primary font-medium border-t">
+                          <div className="flex items-center gap-2">
+                            <Plus className="h-4 w-4" />
+                            Crear nuevo agente
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 
@@ -808,7 +1011,25 @@ export default function NuevaOrdenPage() {
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                       <div className="space-y-2">
                         <Label htmlFor="naviera">Naviera</Label>
-                        <Input id="naviera" className="w-full" placeholder="Nombre de la naviera" />
+                        <Select>
+                          <SelectTrigger id="naviera" className="w-full">
+                            <SelectValue placeholder="Seleccionar naviera" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="maersk">Maersk Line</SelectItem>
+                            <SelectItem value="msc">MSC (Mediterranean Shipping Company)</SelectItem>
+                            <SelectItem value="cma-cgm">CMA CGM</SelectItem>
+                            <SelectItem value="cosco">COSCO Shipping</SelectItem>
+                            <SelectItem value="hapag-lloyd">Hapag-Lloyd</SelectItem>
+                            <SelectItem value="evergreen">Evergreen Line</SelectItem>
+                            <SelectItem value="one">ONE (Ocean Network Express)</SelectItem>
+                            <SelectItem value="yang-ming">Yang Ming</SelectItem>
+                            <SelectItem value="hmm">HMM (Hyundai Merchant Marine)</SelectItem>
+                            <SelectItem value="zim">ZIM Integrated Shipping</SelectItem>
+                            <SelectItem value="wan-hai">Wan Hai Lines</SelectItem>
+                            <SelectItem value="other">Otra naviera</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="num-booking">N° de Booking</Label>
@@ -880,12 +1101,7 @@ export default function NuevaOrdenPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                      <div className="space-y-2">
-                        <Label htmlFor="eta-maritimo">Fecha Estimada de Arribo (ETA)</Label>
-                        <Input id="eta-maritimo" className="w-full" type="date" />
-                      </div>
-                    </div>
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-3"></div>
                   </>
                 )}
               </div>
@@ -926,10 +1142,34 @@ export default function NuevaOrdenPage() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="agente-carga-aereo">
-                      Agente de Carga <span className="text-red-500">*</span>
-                    </Label>
-                    <Input id="agente-carga-aereo" className="w-full" placeholder="Nombre del agente de carga" />
+                    <Label htmlFor="agente-carga-aereo">Agente de Carga</Label>
+                    <Select
+                      onValueChange={(value) => {
+                        if (value === "create-new") {
+                          setProveedorModalType("agente")
+                          setShowProveedorModal(true)
+                        }
+                      }}
+                    >
+                      <SelectTrigger id="agente-carga-aereo" className="w-full">
+                        <SelectValue placeholder="Seleccionar agente" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {localProveedores
+                          .filter((p) => p.estado === "Activo")
+                          .map((proveedor) => (
+                            <SelectItem key={proveedor.id} value={proveedor.id}>
+                              {proveedor.empresa}
+                            </SelectItem>
+                          ))}
+                        <SelectItem value="create-new" className="text-primary font-medium border-t">
+                          <div className="flex items-center gap-2">
+                            <Plus className="h-4 w-4" />
+                            Crear nuevo agente
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 
@@ -1128,41 +1368,73 @@ export default function NuevaOrdenPage() {
               Logística en Origen
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-6 px-6">
             {tipoEnvio === "maritimo" ? (
               <>
                 {/* Show all fields for Marítimo */}
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                   <div className="space-y-2">
-                    <Label htmlFor="logistics-operator">
-                      Operador Logístico <span className="text-red-500">*</span>
-                    </Label>
-                    <Select>
+                    <Label htmlFor="logistics-operator">Operador Logístico</Label>
+                    <Select
+                      onValueChange={(value) => {
+                        if (value === "create-new") {
+                          setProveedorModalType("operador")
+                          setShowProveedorModal(true)
+                        }
+                      }}
+                    >
                       <SelectTrigger id="logistics-operator" className="w-full">
                         <SelectValue placeholder="Seleccionar operador" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="ocean">Ocean Freight Solutions</SelectItem>
-                        <SelectItem value="other">Otro operador</SelectItem>
+                        {localProveedores
+                          .filter((p) => p.estado === "Activo")
+                          .map((proveedor) => (
+                            <SelectItem key={proveedor.id} value={proveedor.id}>
+                              {proveedor.empresa}
+                            </SelectItem>
+                          ))}
+                        <SelectItem value="create-new" className="text-primary font-medium border-t">
+                          <div className="flex items-center gap-2">
+                            <Plus className="h-4 w-4" />
+                            Crear nuevo operador
+                          </div>
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="customs-agency">
-                      Agencia de Aduana <span className="text-red-500">*</span>
-                    </Label>
-                    <Select>
+                    <Label htmlFor="customs-agency">Agencia de Aduana</Label>
+                    <Select
+                      onValueChange={(value) => {
+                        if (value === "create-new") {
+                          setProveedorModalType("agencia")
+                          setShowProveedorModal(true)
+                        }
+                      }}
+                    >
                       <SelectTrigger id="customs-agency" className="w-full">
                         <SelectValue placeholder="Seleccionar agencia" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="customs">Customs Brokerage Inc.</SelectItem>
-                        <SelectItem value="other">Otra agencia</SelectItem>
+                        {localProveedores
+                          .filter((p) => p.estado === "Activo")
+                          .map((proveedor) => (
+                            <SelectItem key={proveedor.id} value={proveedor.id}>
+                              {proveedor.empresa}
+                            </SelectItem>
+                          ))}
+                        <SelectItem value="create-new" className="text-primary font-medium border-t">
+                          <div className="flex items-center gap-2">
+                            <Plus className="h-4 w-4" />
+                            Crear nueva agencia
+                          </div>
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="warehouse">Almacén</Label>
+                    <Label htmlFor="warehouse">Planta</Label>
                     <Select>
                       <SelectTrigger id="warehouse" className="w-full">
                         <SelectValue placeholder="Seleccionar planta" />
@@ -1177,39 +1449,47 @@ export default function NuevaOrdenPage() {
 
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                   <div className="space-y-2">
-                    <Label htmlFor="filling-date">
-                      Fecha y hora para llenado <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="filling-date"
-                      className="w-full"
-                      type="datetime-local"
-                      placeholder="MM/DD/AAAA hh:mm aa"
-                    />
-                  </div>
-                  <div className="space-y-2">
                     <Label htmlFor="dispatch-mode">
                       Modalidad de despacho <span className="text-red-500">*</span>
                     </Label>
-                    <Select>
+                    <Select value={modalidadDespacho} onValueChange={handleModalidadChange} required>
                       <SelectTrigger id="dispatch-mode" className="w-full">
                         <SelectValue placeholder="Seleccionar modalidad" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="direct">Directo</SelectItem>
-                        <SelectItem value="indirect">Indirecto</SelectItem>
+                        <SelectItem value="via-directa">Vía Directa</SelectItem>
+                        <SelectItem value="via-dt">Vía Depósito Temporal (DT)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="entry-terminal">Terminal de Ingreso (Puerto o DT)</Label>
-                    <Select>
+                    <Label htmlFor="entry-terminal">
+                      Terminal de Ingreso (Puerto o DT) <span className="text-red-500">*</span>
+                    </Label>
+                    <Select
+                      value={terminalIngreso}
+                      onValueChange={setTerminalIngreso}
+                      disabled={!modalidadDespacho}
+                      required
+                    >
                       <SelectTrigger id="entry-terminal" className="w-full">
-                        <SelectValue placeholder="Seleccionar terminal" />
+                        <SelectValue
+                          placeholder={
+                            modalidadDespacho ? "Seleccionar terminal" : "Primero seleccione modalidad de despacho"
+                          }
+                        />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="callao">Terminal Marítimo Callao</SelectItem>
-                        <SelectItem value="other">Otro terminal</SelectItem>
+                        {getTerminalOptions().map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                        {modalidadDespacho && getTerminalOptions().length === 0 && (
+                          <SelectItem value="none" disabled>
+                            No hay terminales disponibles
+                          </SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -1220,16 +1500,32 @@ export default function NuevaOrdenPage() {
                 {/* Show limited fields for Aéreo/Terrestre */}
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                   <div className="space-y-2">
-                    <Label htmlFor="customs-agency">
-                      Agencia de Aduana <span className="text-red-500">*</span>
-                    </Label>
-                    <Select>
+                    <Label htmlFor="customs-agency">Agencia de Aduana</Label>
+                    <Select
+                      onValueChange={(value) => {
+                        if (value === "create-new") {
+                          setProveedorModalType("agencia")
+                          setShowProveedorModal(true)
+                        }
+                      }}
+                    >
                       <SelectTrigger id="customs-agency" className="w-full">
                         <SelectValue placeholder="Seleccionar agencia" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="customs">Customs Brokerage Inc.</SelectItem>
-                        <SelectItem value="other">Otra agencia</SelectItem>
+                        {localProveedores
+                          .filter((p) => p.estado === "Activo")
+                          .map((proveedor) => (
+                            <SelectItem key={proveedor.id} value={proveedor.id}>
+                              {proveedor.empresa}
+                            </SelectItem>
+                          ))}
+                        <SelectItem value="create-new" className="text-primary font-medium border-t">
+                          <div className="flex items-center gap-2">
+                            <Plus className="h-4 w-4" />
+                            Crear nueva agencia
+                          </div>
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -1246,9 +1542,7 @@ export default function NuevaOrdenPage() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="filling-date">
-                      Fecha y hora <span className="text-red-500">*</span>
-                    </Label>
+                    <Label htmlFor="filling-date">Fecha y hora</Label>
                     <Input
                       id="filling-date"
                       className="w-full"
@@ -1274,6 +1568,28 @@ export default function NuevaOrdenPage() {
         </Button>
         <Button onClick={handleCreateOrder}>Crear Orden</Button>
       </div>
+
+      {/* Modals */}
+      <ClienteFormModal
+        open={showClienteModal}
+        onClose={() => setShowClienteModal(false)}
+        onSave={handleSaveCliente}
+        cliente={null}
+      />
+
+      <ProductoFormModal
+        open={showProductoModal}
+        onClose={() => setShowProductoModal(false)}
+        onSave={handleSaveProducto}
+        producto={null}
+      />
+
+      <ProveedorFormModal
+        open={showProveedorModal}
+        onClose={() => setShowProveedorModal(false)}
+        onSave={handleSaveProveedor}
+        proveedor={null}
+      />
     </div>
   )
 }

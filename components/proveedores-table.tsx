@@ -35,23 +35,28 @@ const TIPO_ABREVIACIONES: Record<string, string> = {
   Almacén: "AL",
 }
 
+const TIPO_COLORS: Record<string, string> = {
+  "Agencia de Carga": "bg-blue-100 text-blue-700 hover:bg-blue-100",
+  "Operador Logístico": "bg-purple-100 text-purple-700 hover:bg-purple-100",
+  "Agencia de Aduanas": "bg-green-100 text-green-700 hover:bg-green-100",
+  Transporte: "bg-orange-100 text-orange-700 hover:bg-orange-100",
+  Almacén: "bg-cyan-100 text-cyan-700 hover:bg-cyan-100",
+}
+
 const TiposAbbreviated = ({ tipos }: { tipos: string[] }) => (
   <TooltipProvider>
-    <div className="flex items-center gap-1 text-xs">
-      {tipos.map((tipo, index) => (
-        <span key={tipo} className="flex items-center">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="cursor-help font-medium text-foreground/80 hover:text-foreground">
-                {TIPO_ABREVIACIONES[tipo] || tipo.substring(0, 2).toUpperCase()}
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p className="text-xs">{tipo}</p>
-            </TooltipContent>
-          </Tooltip>
-          {index < tipos.length - 1 && <span className="text-muted-foreground mx-1">|</span>}
-        </span>
+    <div className="flex items-center gap-1">
+      {tipos.map((tipo) => (
+        <Tooltip key={tipo}>
+          <TooltipTrigger asChild>
+            <Badge variant="secondary" className={cn("text-xs cursor-help", TIPO_COLORS[tipo])}>
+              {TIPO_ABREVIACIONES[tipo] || tipo.substring(0, 2).toUpperCase()}
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="text-xs">{tipo}</p>
+          </TooltipContent>
+        </Tooltip>
       ))}
     </div>
   </TooltipProvider>
@@ -99,7 +104,7 @@ export function ProveedoresTable({
       </div>
 
       {/* Table */}
-      <div className="rounded-lg border border-border bg-card">
+      <div className="rounded-lg border border-border bg-card overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -111,7 +116,7 @@ export function ProveedoresTable({
               <TableHead>Teléfono</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Estado</TableHead>
-              <TableHead className="w-[50px]"></TableHead>
+              <TableHead className="w-[50px] sticky right-0 bg-card shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.1)]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -138,7 +143,7 @@ export function ProveedoresTable({
                       {proveedor.estado}
                     </Badge>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="sticky right-0 bg-card shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.1)]">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8">

@@ -1,7 +1,8 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
-import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import {
   Radio,
@@ -27,6 +28,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Separator } from "@/components/ui/separator"
 import { ConfiguracionesModal } from "@/components/configuraciones-modal"
 import Image from "next/image"
+import { useCompany } from "@/contexts/company-context"
 
 const navigation = [
   {
@@ -64,7 +66,7 @@ const companies = [
 export function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
-  const [company, setCompany] = useState("wuilio-peru")
+  const { selectedCompany, changeCompany, requestNavigation } = useCompany()
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
@@ -80,6 +82,19 @@ export function Sidebar() {
 
   const handleRegisterCompany = () => {
     router.push("/registrar-empresa")
+  }
+
+  const handleLogout = () => {
+    setIsUserMenuOpen(false)
+    router.push("/login")
+  }
+
+  const handleNavigationClick = (e: React.MouseEvent, href: string) => {
+    e.preventDefault()
+    const canNavigate = requestNavigation(href)
+    if (canNavigate) {
+      router.push(href)
+    }
   }
 
   return (
@@ -123,12 +138,15 @@ export function Sidebar() {
           {!isCollapsed && (
             <div className="border-b border-border p-4 border-none">
               <Select
-                value={company}
+                value={selectedCompany}
                 onValueChange={(value) => {
                   if (value === "register-new") {
                     handleRegisterCompany()
                   } else {
-                    setCompany(value)
+                    const company = companies.find((c) => c.id === value)
+                    if (company) {
+                      changeCompany(value, company.name)
+                    }
                   }
                 }}
               >
@@ -180,10 +198,10 @@ export function Sidebar() {
                         <li key={item.name}>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Link
-                                href={item.href}
+                              <button
+                                onClick={(e) => handleNavigationClick(e, item.href)}
                                 className={cn(
-                                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+                                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors w-full",
                                   isActive
                                     ? "bg-gray-100 text-gray-900"
                                     : "text-foreground hover:bg-accent hover:text-accent-foreground",
@@ -192,7 +210,7 @@ export function Sidebar() {
                               >
                                 <Icon className="shrink-0 size-5" strokeWidth={1.5} />
                                 {!isCollapsed && item.name}
-                              </Link>
+                              </button>
                             </TooltipTrigger>
                             {isCollapsed && !isTransitioning && (
                               <TooltipContent
@@ -255,7 +273,10 @@ export function Sidebar() {
                     <Settings className="h-4 w-4" strokeWidth={1.5} />
                     <span>Configuraciones</span>
                   </button>
-                  <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-foreground transition-colors hover:bg-accent">
+                  <button
+                    onClick={handleLogout}
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-foreground transition-colors hover:bg-accent"
+                  >
                     <LogOut className="h-4 w-4" strokeWidth={1.5} />
                     <span>Cerrar sesión</span>
                   </button>

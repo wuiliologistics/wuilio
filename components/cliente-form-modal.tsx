@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
 import type { Cliente, Notify } from "@/types/cliente"
-import { Plus, Trash2, Info } from "lucide-react"
+import { Plus, Trash2, Info, X, ChevronDown, ChevronUp } from "lucide-react"
 import NotifyFormModal from "./notify-form-modal"
 
 const ALL_COUNTRIES = [
@@ -331,8 +331,10 @@ export function ClienteFormModal({ open, onClose, onSave, cliente }: ClienteForm
     contacto: "",
     telefono: "",
     email: "",
+    emailsAdicionales: [],
     estado: "Activo",
     notifies: [],
+    condicionesPagoComercial: "",
   })
 
   const [phoneCode, setPhoneCode] = useState("+1-US")
@@ -340,6 +342,8 @@ export function ClienteFormModal({ open, onClose, onSave, cliente }: ClienteForm
   const [showNotifyModal, setShowNotifyModal] = useState(false)
   const [editingNotify, setEditingNotify] = useState<Notify | null>(null)
   const [showLocalidad, setShowLocalidad] = useState(true)
+  const [showAdditionalEmails, setShowAdditionalEmails] = useState(false)
+  const [additionalEmails, setAdditionalEmails] = useState<string[]>([])
 
   useEffect(() => {
     if (cliente) {
@@ -349,8 +353,14 @@ export function ClienteFormModal({ open, onClose, onSave, cliente }: ClienteForm
         localidad: cliente.localidad || "",
         zipCode: cliente.zipCode || "",
         codigoPostal: cliente.codigoPostal || "",
+        emailsAdicionales: cliente.emailsAdicionales || [],
         notifies: cliente.notifies || [],
+        condicionesPagoComercial: cliente.condicionesPagoComercial || "",
       })
+      if (cliente.emailsAdicionales && cliente.emailsAdicionales.length > 0) {
+        setAdditionalEmails(cliente.emailsAdicionales)
+        setShowAdditionalEmails(true)
+      }
       if (cliente.telefono) {
         const matchedCode = COUNTRY_CODES.find((cc) => cliente.telefono?.startsWith(cc.code))
         if (matchedCode) {
@@ -373,11 +383,15 @@ export function ClienteFormModal({ open, onClose, onSave, cliente }: ClienteForm
         contacto: "",
         telefono: "",
         email: "",
+        emailsAdicionales: [],
         estado: "Activo",
         notifies: [],
+        condicionesPagoComercial: "",
       })
       setPhoneCode("+1-US")
       setPhoneNumber("")
+      setAdditionalEmails([])
+      setShowAdditionalEmails(false)
     }
   }, [cliente, open])
 
@@ -429,11 +443,34 @@ export function ClienteFormModal({ open, onClose, onSave, cliente }: ClienteForm
     setFormData({ ...formData, notifies: notifies.filter((n) => n.id !== notifyId) })
   }
 
+  const handleAddAdditionalEmail = () => {
+    setAdditionalEmails([...additionalEmails, ""])
+  }
+
+  const handleRemoveAdditionalEmail = (index: number) => {
+    const updated = additionalEmails.filter((_, i) => i !== index)
+    setAdditionalEmails(updated)
+    if (updated.length === 0) {
+      setShowAdditionalEmails(false)
+    }
+  }
+
+  const handleAdditionalEmailChange = (index: number, value: string) => {
+    const updated = [...additionalEmails]
+    updated[index] = value
+    setAdditionalEmails(updated)
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     const actualCode = phoneCode.split("-")[0]
     const fullPhone = phoneNumber ? `${actualCode} ${phoneNumber}` : ""
-    onSave({ ...formData, telefono: fullPhone })
+    const validAdditionalEmails = additionalEmails.filter((email) => email.trim() !== "")
+    onSave({
+      ...formData,
+      telefono: fullPhone,
+      emailsAdicionales: validAdditionalEmails.length > 0 ? validAdditionalEmails : undefined,
+    })
     onClose()
   }
 
@@ -681,6 +718,79 @@ export function ClienteFormModal({ open, onClose, onSave, cliente }: ClienteForm
                     />
                   </div>
                 </div>
+              </div>
+
+              {/* Additional Emails */}
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAdditionalEmails(!showAdditionalEmails)
+                    if (!showAdditionalEmails && additionalEmails.length === 0) {
+                      setAdditionalEmails([""])
+                    }
+                  }}
+                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showAdditionalEmails ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  <span>Agregar más emails (CC)</span>
+                </button>
+
+                {showAdditionalEmails && (
+                  <div className="space-y-3 pl-6 border-l-2 border-border">
+                    {additionalEmails.map((email, index) => (
+                      <div key={index} className="flex gap-2 items-start">
+                        <div className="flex-1 space-y-2">
+                          <Input
+                            type="email"
+                            placeholder="email@empresa.com"
+                            value={email}
+                            onChange={(e) => handleAdditionalEmailChange(index, e.target.value)}
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemoveAdditionalEmail(index)}
+                          className="h-10 w-10 text-muted-foreground hover:text-destructive"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAddAdditionalEmail}
+                      className="flex items-center gap-2 bg-transparent"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Agregar otro email
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Condiciones Comerciales */}
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">Condiciones Comerciales</h3>
+                <Separator className="mt-2" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="condicionesPagoComercial" className="text-sm font-medium">
+                  Condiciones de Pago Comercial
+                </Label>
+                <Input
+                  id="condicionesPagoComercial"
+                  value={formData.condicionesPagoComercial}
+                  onChange={(e) => setFormData({ ...formData, condicionesPagoComercial: e.target.value })}
+                  className="w-full"
+                  placeholder="Ej: 30% adelanto, 70% contra BL"
+                />
               </div>
             </div>
 

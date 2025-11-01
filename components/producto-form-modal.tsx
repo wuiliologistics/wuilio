@@ -67,7 +67,7 @@ export function ProductoFormModal({ open, onClose, onSave, producto }: ProductoF
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-6">
+      <DialogContent className="!max-w-3xl max-h-[90vh] overflow-y-auto p-6">
         <DialogHeader className="pb-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-gray-800 to-gray-900">

@@ -6,11 +6,12 @@ import { mockOrders } from "@/lib/mock-data"
 import type { Order } from "@/types/order"
 
 export default function OrdenesPage() {
+  const [orders, setOrders] = useState<Order[]>(mockOrders)
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [typeFilter, setTypeFilter] = useState<string>("all")
 
-  const filteredOrders = mockOrders.filter((order: Order) => {
+  const filteredOrders = orders.filter((order: Order) => {
     const matchesSearch =
       order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.cliente.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -23,6 +24,10 @@ export default function OrdenesPage() {
     return matchesSearch && matchesStatus && matchesType
   })
 
+  const handleOrderUpdate = (updatedOrder: Order) => {
+    setOrders((prevOrders) => prevOrders.map((order) => (order.id === updatedOrder.id ? updatedOrder : order)))
+  }
+
   return (
     <div className="space-y-4">
       <OrdersTable
@@ -33,6 +38,7 @@ export default function OrdenesPage() {
         onStatusFilterChange={setStatusFilter}
         typeFilter={typeFilter}
         onTypeFilterChange={setTypeFilter}
+        onOrderUpdate={handleOrderUpdate}
       />
     </div>
   )

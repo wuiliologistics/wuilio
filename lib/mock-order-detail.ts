@@ -1,4 +1,5 @@
 import type { OrderDetail } from "@/types/order-detail"
+import { mockContainers } from "./mock-container-data"
 
 export const mockOrderDetail: OrderDetail = {
   id: "SLE-20250022",
@@ -88,6 +89,8 @@ export const mockOrderDetail: OrderDetail = {
   operadorTransporte: "RANSA SAC",
   depositoVacios: "RANSA SAC",
   depositoTemporal: "DP WORLD LOGISTICS SRL",
+
+  contenedores: mockContainers,
 }
 
 export function getOrderDetail(id: string): OrderDetail | null {

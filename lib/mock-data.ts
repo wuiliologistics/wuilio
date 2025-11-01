@@ -3,6 +3,16 @@ import type { Cliente } from "@/types/cliente"
 
 export const mockOrders: Order[] = [
   {
+    id: "SLE-2025032",
+    estado: "Borrador",
+    etd: "15/02/2025",
+    cliente: "Pacific Trade Co.",
+    proforma: "DRAFT-001",
+    destino: "Shanghai (CNSHA), China",
+    booking: "PENDING",
+    tipo: "Marítimo",
+  },
+  {
     id: "SLE-2025022",
     estado: "Programado",
     etd: "09/02/2025",
@@ -13,8 +23,8 @@ export const mockOrders: Order[] = [
     tipo: "Marítimo",
   },
   {
-    id: "SLE-2025022",
-    estado: "Pendiente",
+    id: "SLE-2025029",
+    estado: "Creado",
     etd: "09/02/2025",
     cliente: "North American Tile Group, LLC",
     proforma: "ORD-TEST-01",
@@ -23,8 +33,8 @@ export const mockOrders: Order[] = [
     tipo: "Marítimo",
   },
   {
-    id: "SLE-2025022",
-    estado: "Pendiente",
+    id: "SLE-2025030",
+    estado: "Creado",
     etd: "09/02/2025",
     cliente: "North American Tile Group, LLC",
     proforma: "ORD-TEST-01",
@@ -33,7 +43,7 @@ export const mockOrders: Order[] = [
     tipo: "Aéreo",
   },
   {
-    id: "SLE-2025022",
+    id: "SLE-2025031",
     estado: "Completado",
     etd: "09/02/2025",
     cliente: "North American Tile Group, LLC",
@@ -54,7 +64,7 @@ export const mockOrders: Order[] = [
   },
   {
     id: "SLE-2025024",
-    estado: "Pendiente",
+    estado: "Creado",
     etd: "11/02/2025",
     cliente: "Pacific Trade Co.",
     proforma: "ORD-TEST-03",
@@ -84,7 +94,7 @@ export const mockOrders: Order[] = [
   },
   {
     id: "SLE-2025027",
-    estado: "Pendiente",
+    estado: "Creado",
     etd: "13/02/2025",
     cliente: "South American Traders",
     proforma: "ORD-TEST-06",

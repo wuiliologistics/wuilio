@@ -11,6 +11,7 @@ export interface Proveedor {
   contacto: string
   telefono: string
   email: string
+  emailsAdicionales?: string[]
   tiposProveedor: string[] // Array of: "Agencia de Carga", "Agencia de Aduana", "Transporte", "Operador Logístico", "Almacén"
   nombreBanco?: string
   numeroCuenta?: string

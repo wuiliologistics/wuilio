@@ -70,7 +70,7 @@ export function ClientesTable({
       </div>
 
       {/* Table */}
-      <div className="rounded-lg border border-border bg-card">
+      <div className="rounded-lg border border-border bg-card overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -82,7 +82,7 @@ export function ClientesTable({
               <TableHead>Email</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead>Notifies</TableHead>
-              <TableHead className="w-[50px]"></TableHead>
+              <TableHead className="w-[50px] sticky right-0 bg-card shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.1)]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -112,7 +112,7 @@ export function ClientesTable({
                       {cliente.notifies.length}
                     </Button>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="sticky right-0 bg-card shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.1)]">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8">
